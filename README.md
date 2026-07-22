@@ -13,10 +13,23 @@ npm install
 npm run dev        # http://localhost:4321
 ```
 
-> Las carpetas `public/images` y `public/videos` son **symlinks** al dataset
-> (`../exercises-dataset-main`), así los 125 MB de GIFs no se duplican.
-> `public/data/exercises.es.json` es una versión recortada (solo español) del
-> `data/exercises.json` original.
+> Las imágenes y GIFs **no viven en este repo**: se sirven desde el dataset
+> original ([exercises-dataset](https://github.com/hasaneyldrm/exercises-dataset))
+> vía jsDelivr — ver `src/lib/media.js`. Así el repositorio pesa ~12 MB en vez de
+> 150 MB y el deploy no depende de rutas externas.
+>
+> Para servir el media localmente (modo sin conexión total): copia `images/` y
+> `videos/` del dataset dentro de `public/` y crea un `.env` con
+> `PUBLIC_MEDIA_BASE=` (vacío).
+>
+> Los `public/data/exercises.<idioma>.json` son versiones recortadas del
+> `data/exercises.json` original; se regeneran con
+> `python3 scripts/generar-datos.py` (necesita el dataset en `../exercises-dataset-main`).
+
+## Deploy en Vercel
+
+El repo es la carpeta `app/`, así que Vercel funciona sin configuración: detecta
+Astro, corre `pnpm run build` y publica `dist/`. No definas Root Directory.
 
 ## Flujo
 
