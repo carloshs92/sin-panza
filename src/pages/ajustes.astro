@@ -30,6 +30,14 @@ import Base from '../layouts/Base.astro';
       <a class="btn small ghost" href="/?editar=1">✏️ Editar mi plan (idioma, equipo, días…)</a>
     </section>
 
+    <section class="card rise rise-2">
+      <h2>Sin internet</h2>
+      <p class="muted">Descarga las animaciones de tus rutinas para entrenar aunque te quedes sin señal.</p>
+      <p class="estado-off" id="estadoOff">Comprobando…</p>
+      <div class="barra-desc oculto" id="barraDesc"><div id="barraFill"></div></div>
+      <button class="btn small" id="btnDescargar">⬇️ Descargar para usar sin internet</button>
+    </section>
+
     <section class="card rise rise-3">
       <h2>Aplicación</h2>
       <p class="muted">Instálala en tu pantalla de inicio para abrirla como una app, a pantalla completa y sin conexión.</p>
@@ -86,6 +94,12 @@ import Base from '../layouts/Base.astro';
   .peligro { border-color: rgba(255, 92, 56, 0.3); }
   .oculto { display: none !important; }
 
+  .estado-off { font-size: 0.85rem; font-weight: 600; }
+  .estado-off.listo { color: var(--green); }
+  .estado-off.falta { color: var(--amber); }
+  .barra-desc { height: 8px; border-radius: 99px; background: var(--bg-soft); overflow: hidden; }
+  .barra-desc div { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), #ff8c38); transition: width 0.2s ease; }
+
   .creditos { font-size: 0.75rem; line-height: 1.7; text-align: center; padding: 8px 0 4px; }
   .creditos a { text-decoration: underline; }
 
@@ -117,6 +131,7 @@ import Base from '../layouts/Base.astro';
 <script>
   import { getProfile, getSettings, saveSettings, getRoutines, saveRoutines, resetAll, DIAS, CATEGORIAS, IDIOMAS, EQUIPOS } from '../lib/db.js';
   import { cargarEjercicios, generarRutinas } from '../lib/plan.js';
+  import { urlsDeRutinas, cuantoFalta, descargar, hayCache } from '../lib/media.js';
   import { navigate } from 'astro:transitions/client';
 
   document.addEventListener('astro:page-load', () => {
@@ -160,6 +175,55 @@ import Base from '../layouts/Base.astro';
       saveRoutines(generarRutinas(perfil, ejercicios, getSettings()));
       navigate('/rutinas');
     });
+
+    // ---- descarga para usar sin internet ----
+    const urlsOff = urlsDeRutinas(getRoutines());
+    const mb = (b) => (b / 1048576).toFixed(1) + ' MB';
+
+    async function pintarEstadoOff() {
+      const el = $('estadoOff');
+      if (!hayCache()) {
+        el.textContent = 'Este navegador no permite guardar contenido sin conexión.';
+        $('btnDescargar').disabled = true;
+        return;
+      }
+      if (urlsOff.length === 0) {
+        el.textContent = 'Aún no tienes rutinas que descargar.';
+        $('btnDescargar').disabled = true;
+        return;
+      }
+      const { guardados, total } = await cuantoFalta(urlsOff);
+      if (guardados >= total) {
+        el.textContent = `✓ Listo: ${total} archivos guardados. Puedes entrenar sin internet.`;
+        el.className = 'estado-off listo';
+        $('btnDescargar').textContent = '↻ Volver a comprobar';
+      } else {
+        el.textContent = `Faltan ${total - guardados} de ${total} archivos por guardar.`;
+        el.className = 'estado-off falta';
+        $('btnDescargar').textContent = '⬇️ Descargar para usar sin internet';
+      }
+    }
+
+    $('btnDescargar').addEventListener('click', async () => {
+      const btn = $('btnDescargar');
+      btn.disabled = true;
+      $('barraDesc').classList.remove('oculto');
+      try {
+        await descargar(urlsOff, ({ hechos, total, bytes }) => {
+          $('barraFill').style.width = `${(hechos / total) * 100}%`;
+          $('estadoOff').textContent = `Descargando ${hechos} de ${total}… (${mb(bytes)})`;
+          $('estadoOff').className = 'estado-off';
+        });
+      } catch (err) {
+        $('estadoOff').textContent = 'No se pudo descargar: ' + err.message;
+      }
+      btn.disabled = false;
+      $('barraDesc').classList.add('oculto');
+      $('barraFill').style.width = '0%';
+      pintarEstadoOff();
+    });
+
+    pintarEstadoOff();
 
     // ---- instalación en pantalla de inicio (PWA) ----
     const btnInstalar = $('btnInstalar');

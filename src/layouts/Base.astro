@@ -18,6 +18,18 @@ const { title, nav = null } = Astro.props;
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="SinPanza" />
+    {/* Pantallas de arranque de iOS: solo se usa la que coincide exactamente
+        con el dispositivo. Se regeneran con scripts/generar-graficos.py */}
+    {[
+      [440, 956, 3], [430, 932, 3], [402, 874, 3], [393, 852, 3], [390, 844, 3],
+      [414, 896, 3], [414, 896, 2], [375, 812, 3], [414, 736, 3], [375, 667, 2],
+    ].map(([w, h, dpr]) => (
+      <link
+        rel="apple-touch-startup-image"
+        media={`(device-width: ${w}px) and (device-height: ${h}px) and (-webkit-device-pixel-ratio: ${dpr}) and (orientation: portrait)`}
+        href={`/splash/splash-${w * dpr}x${h * dpr}.png`}
+      />
+    ))}
     <script is:inline>
       // Captura temprana del evento de instalación PWA (Ajustes lo usa)
       window.addEventListener('beforeinstallprompt', (e) => {
@@ -25,6 +37,17 @@ const { title, nav = null } = Astro.props;
         window.__installPrompt = e;
         window.dispatchEvent(new CustomEvent('sp:instalable'));
       });
+      // Aviso de falta de red (se mantiene entre navegaciones con view transitions)
+      if (!window.__redVigilada) {
+        window.__redVigilada = true;
+        const pintarRed = () => {
+          const el = document.getElementById('sinRed');
+          if (el) el.classList.toggle('oculto', navigator.onLine);
+        };
+        addEventListener('online', pintarRed);
+        addEventListener('offline', pintarRed);
+        document.addEventListener('astro:page-load', pintarRed);
+      }
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           // En dev (vite) no se registra: cachearía los módulos y verías código viejo
@@ -34,13 +57,20 @@ const { title, nav = null } = Astro.props;
     </script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
     <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="preload" href="/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin />
     <title>{title} · SinPanza</title>
     <ClientRouter />
   </head>
   <body>
+    {/* Splash propio (Android/escritorio, y relevo del de iOS). transition:persist
+        evita que se repita en cada navegación; se oculta solo con CSS. */}
+    <div id="splash" transition:persist>
+      <div class="splash-logo">
+        <span></span><span></span><span></span>
+      </div>
+      <b>Sin<i>Panza</i></b>
+    </div>
+    <div id="sinRed" class="sin-red oculto">📴 Sin conexión — usando lo que tienes guardado</div>
     <main class="shell">
       <slot />
     </main>

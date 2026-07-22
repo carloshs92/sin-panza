@@ -3,11 +3,19 @@
 // Dos cachés separadas a propósito: el media (imágenes y GIFs) es inmutable y
 // caro de descargar, así que vive en una caché sin versión que NO se borra al
 // actualizar la app. Solo el shell se invalida al subir de versión.
-const SHELL_CACHE = 'sinpanza-shell-v4';
+const SHELL_CACHE = 'sinpanza-shell-v6';
 const MEDIA_CACHE = 'sinpanza-media';
 const HOSTS_MEDIA = ['cdn.jsdelivr.net'];
 
-const SHELL = ['/', '/rutinas', '/entrenar', '/editar', '/buscar', '/ajustes', '/manifest.webmanifest'];
+// Todo lo imprescindible para arrancar sin red: páginas, manifiesto y la
+// tipografía (autoalojada justamente para no depender de Google Fonts).
+const SHELL = [
+  '/', '/rutinas', '/entrenar', '/editar', '/buscar', '/ajustes',
+  '/manifest.webmanifest',
+  '/fonts/sora-latin.woff2',
+  '/fonts/sora-latin-ext.woff2',
+  '/icons/icon-192.png',
+];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
@@ -65,7 +73,11 @@ self.addEventListener('fetch', (e) => {
           guardar(SHELL_CACHE, e.request, res);
           return res;
         })
-        .catch(() => caches.match(e.request).then((r) => r || caches.match('/')))
+        // ignoreSearch: las páginas se abren con query (/entrenar?dia=lunes) y
+        // en la caché están sin ella; sin esto, sin red caerían todas al inicio.
+        .catch(() =>
+          caches.match(e.request, { ignoreSearch: true }).then((r) => r || caches.match('/'))
+        )
     );
     return;
   }
