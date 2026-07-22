@@ -131,6 +131,7 @@ import Base from '../layouts/Base.astro';
 
 <script>
   import { getProfile, getRoutines, getSettings, getHistory, calcularRacha, DIAS, diaHoy, diaDe } from '../lib/db.js';
+  import { mediaUrl } from '../lib/media.js';
   import { navigate } from 'astro:transitions/client';
 
   document.addEventListener('astro:page-load', () => {
@@ -236,7 +237,7 @@ import Base from '../layouts/Base.astro';
       a.style.animationDelay = `${0.2 + i * 0.06}s`;
       a.style.viewTransitionName = `dia-${diaId}`;
 
-      const thumbs = ejercicios.slice(0, 4).map((e) => `<img src="/${e.image}" alt="" loading="lazy" />`).join('');
+      const thumbs = ejercicios.slice(0, 4).map((e) => `<img src="${mediaUrl(e.image)}" alt="" loading="lazy" />`).join('');
       const extra = ejercicios.length > 4 ? `<div class="mas">+${ejercicios.length - 4}</div>` : '';
 
       a.innerHTML = `

@@ -1,6 +1,7 @@
 // Service worker: cachea el shell y los datos para funcionar sin conexión.
-// Los GIFs de /videos no se precachean (125 MB): se cachean al usarse.
-const CACHE = 'sinpanza-v1';
+// El media vive en jsDelivr y se cachea al usarse (nunca se precachea: son 136 MB).
+const CACHE = 'sinpanza-v2';
+const HOSTS_MEDIA = ['cdn.jsdelivr.net'];
 const SHELL = ['/', '/rutinas', '/entrenar', '/ajustes', '/manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
@@ -17,7 +18,9 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
-  if (e.request.method !== 'GET' || url.origin !== location.origin) return;
+  if (e.request.method !== 'GET') return;
+  // Solo se gestiona lo propio y el media del dataset (jsDelivr)
+  if (url.origin !== location.origin && !HOSTS_MEDIA.includes(url.hostname)) return;
 
   // red primero para las páginas (para recibir actualizaciones), caché de respaldo
   const esPagina = e.request.mode === 'navigate';
@@ -34,7 +37,9 @@ self.addEventListener('fetch', (e) => {
           (hit) =>
             hit ||
             fetch(e.request).then((res) => {
-              if (res.ok) {
+              // Las imágenes de otro origen llegan como respuesta opaca (status 0):
+              // se cachean igual para que el modo sin conexión funcione.
+              if (res.ok || res.type === 'opaque') {
                 const copia = res.clone();
                 caches.open(CACHE).then((c) => c.put(e.request, copia));
               }

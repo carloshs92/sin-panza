@@ -51,6 +51,12 @@ import Base from '../layouts/Base.astro';
       <p class="muted">Todo se guarda solo en este dispositivo.</p>
       <button class="btn small ghost" id="btnReset">🗑️ Borrar todo y empezar de cero</button>
     </section>
+
+    <footer class="creditos muted rise rise-3">
+      Ejercicios e ilustraciones: <b>© Gym visual</b> —
+      <a href="https://gymvisual.com/" target="_blank" rel="noopener">gymvisual.com</a><br />
+      Datos: <a href="https://github.com/hasaneyldrm/exercises-dataset" target="_blank" rel="noopener">exercises-dataset</a> (MIT)
+    </footer>
   </div>
 
   <!-- Alerta de confirmación para borrar -->
@@ -79,6 +85,9 @@ import Base from '../layouts/Base.astro';
   .ok { font-size: 0.85rem; color: var(--green); min-height: 1em; }
   .peligro { border-color: rgba(255, 92, 56, 0.3); }
   .oculto { display: none !important; }
+
+  .creditos { font-size: 0.75rem; line-height: 1.7; text-align: center; padding: 8px 0 4px; }
+  .creditos a { text-decoration: underline; }
 
   .ios-pasos { font-size: 0.9rem; line-height: 1.6; }
   .ios-pasos ol { margin: 8px 0 0 20px; }

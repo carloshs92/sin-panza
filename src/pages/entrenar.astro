@@ -18,6 +18,7 @@ import Base from '../layouts/Base.astro';
       <div class="media card" id="mediaBox">
         <img id="exGif" src="" alt="Demostración del ejercicio" />
       </div>
+      <p class="credito">© Gym visual — <a href="https://gymvisual.com/" target="_blank" rel="noopener">gymvisual.com</a></p>
 
       <div class="ex-titulo">
         <h1 id="exNombre">—</h1>
@@ -106,6 +107,8 @@ import Base from '../layouts/Base.astro';
 
   .media { padding: 0; overflow: hidden; background: #fff; display: flex; justify-content: center; }
   .media img { width: 100%; max-height: 300px; object-fit: contain; }
+  .credito { font-size: 0.68rem; color: var(--text-dim); opacity: 0.7; text-align: right; margin-top: -8px; }
+  .credito a { text-decoration: underline; }
 
   .ex-titulo h1 { font-size: 1.45rem; text-transform: capitalize; margin-bottom: 8px; }
   .ex-tags { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -177,6 +180,7 @@ import Base from '../layouts/Base.astro';
   import { initAudio, sonidoTick, sonidoGo, sonidoSerie, sonidoEjercicio, sonidoFin } from '../lib/audio.js';
   import { soportaVoz, crearEscucha, vozDe } from '../lib/voice.js';
   import { soportaTTS, leer, callar } from '../lib/tts.js';
+  import { mediaUrl } from '../lib/media.js';
   import { navigate } from 'astro:transitions/client';
 
   document.addEventListener('astro:page-load', () => {
@@ -223,7 +227,7 @@ import Base from '../layouts/Base.astro';
       $('pDia').textContent = DIAS.find((d) => d.id === dia)?.label ?? dia;
       $('pPos').textContent = `Ejercicio ${st.idx + 1} de ${rutina.length}`;
       $('pBarra').style.width = `${(st.idx / rutina.length) * 100}%`;
-      $('exGif').src = '/' + ex.gif;
+      $('exGif').src = mediaUrl(ex.gif);
       $('exNombre').textContent = ex.name;
       $('exTags').innerHTML = `
         <span class="tag accent">${ex.target}</span>
