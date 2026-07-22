@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# dependencias
+node_modules/
+
+# build y caché de Astro
+dist/
+.astro/
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# entorno y secretos
+.env
+.env.*
+!.env.example

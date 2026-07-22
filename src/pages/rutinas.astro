@@ -1,0 +1,256 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<Base title="Mis rutinas" nav="rutinas">
+  <div id="rutinas">
+    <header class="cab rise">
+      <div>
+        <p class="muted" id="saludo">Hola 👋</p>
+        <h1>Tu semana</h1>
+      </div>
+    </header>
+
+    <!-- Estado de hoy -->
+    <a class="hoy-card rise rise-1" id="hoyCard" href="#"></a>
+
+    <!-- Estadísticas -->
+    <div class="stats rise rise-1">
+      <div class="stat card">
+        <b id="stRacha">0</b>
+        <span>🔥 racha</span>
+      </div>
+      <div class="stat card">
+        <b id="stMes">0</b>
+        <span>📅 este mes</span>
+      </div>
+      <div class="stat card">
+        <b id="stTotal">0</b>
+        <span>✅ total</span>
+      </div>
+    </div>
+
+    <!-- Calendario del mes -->
+    <div class="card cal rise rise-2">
+      <div class="cal-head">
+        <h2 id="calTitulo">—</h2>
+        <span class="muted" id="calResumen"></span>
+      </div>
+      <div class="cal-grid cal-labels">
+        <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
+      </div>
+      <div class="cal-grid" id="calDias"></div>
+    </div>
+
+    <h2 class="sub rise rise-3">Rutinas</h2>
+    <div class="lista" id="listaDias"></div>
+  </div>
+</Base>
+
+<style>
+  .cab { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+  .cab h1 { font-size: 1.7rem; }
+
+  .hoy-card {
+    display: block;
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    margin-bottom: 14px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    transition: transform 0.18s ease;
+  }
+  .hoy-card:active { transform: scale(0.98); }
+  .hoy-card.pendiente { border-color: var(--accent); background: linear-gradient(135deg, var(--accent-soft), var(--card) 60%); }
+  .hoy-card.cumplido { border-color: var(--green); background: linear-gradient(135deg, var(--green-soft), var(--card) 60%); }
+  .hoy-card :global(.hc-titulo) { font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  .hoy-card :global(.hc-sub) { color: var(--text-dim); font-size: 0.88rem; margin-top: 4px; }
+
+  .stats { display: flex; gap: 10px; margin-bottom: 14px; }
+  .stat { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 14px 8px; }
+  .stat b { font-size: 1.5rem; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .stat span { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+
+  .cal { margin-bottom: 22px; }
+  .cal-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+  .cal-head h2 { font-size: 1.05rem; text-transform: capitalize; }
+  .cal-head span { font-size: 0.8rem; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .cal-labels { margin-bottom: 6px; }
+  .cal-labels span { text-align: center; font-size: 0.68rem; font-weight: 700; color: var(--text-dim); }
+
+  .cal-grid :global(.cd) {
+    aspect-ratio: 1;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 10px;
+    font-size: 0.82rem; font-weight: 600;
+    color: var(--text-dim);
+    position: relative;
+    background: var(--bg-soft);
+  }
+  .cal-grid :global(.cd.vacio) { background: none; }
+  .cal-grid :global(.cd.prog)::after {
+    content: ''; position: absolute; bottom: 5px;
+    width: 4px; height: 4px; border-radius: 50%; background: var(--text-dim); opacity: 0.6;
+  }
+  .cal-grid :global(.cd.hecho) { background: var(--green); color: #06281a; font-weight: 800; }
+  .cal-grid :global(.cd.hecho)::after { display: none; }
+  .cal-grid :global(.cd.fallado) { color: var(--accent); opacity: 0.75; }
+  .cal-grid :global(.cd.hoy) { outline: 2px solid var(--accent); outline-offset: 1px; color: var(--text); }
+  .cal-grid :global(.cd.futuro) { opacity: 0.4; }
+
+  .sub { font-size: 1.05rem; margin-bottom: 12px; color: var(--text-dim); }
+  .lista { display: flex; flex-direction: column; gap: 14px; }
+
+  .lista :global(.dia-card) {
+    display: block;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+  }
+  .lista :global(.dia-card:active) { transform: scale(0.98); }
+  .lista :global(.dia-card.hoy) { border-color: var(--accent); background: linear-gradient(140deg, var(--accent-soft), var(--card) 55%); }
+
+  .lista :global(.dia-top) { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .lista :global(.dia-top h2) { font-size: 1.15rem; display: flex; align-items: center; gap: 10px; }
+  .lista :global(.dia-meta) { display: flex; gap: 8px; }
+
+  .lista :global(.thumbs) { display: flex; gap: 8px; overflow: hidden; }
+  .lista :global(.thumbs img) {
+    width: 64px; height: 64px; object-fit: cover;
+    border-radius: 12px; background: #fff; flex-shrink: 0;
+  }
+  .lista :global(.thumbs .mas) {
+    width: 64px; height: 64px; border-radius: 12px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg-soft); color: var(--text-dim); font-weight: 700; font-size: 0.9rem;
+  }
+  .lista :global(.hecho-hoy) { margin-top: 10px; font-size: 0.85rem; color: var(--green); font-weight: 600; }
+</style>
+
+<script>
+  import { getProfile, getRoutines, getSettings, getHistory, calcularRacha, DIAS, diaHoy, diaDe } from '../lib/db.js';
+  import { navigate } from 'astro:transitions/client';
+
+  document.addEventListener('astro:page-load', () => {
+    const root = document.getElementById('rutinas');
+    if (!root) return;
+
+    const perfil = getProfile();
+    if (!perfil) {
+      navigate('/', { history: 'replace' });
+      return;
+    }
+
+    const rutinas = getRoutines();
+    const settings = getSettings();
+    const historial = getHistory();
+    const hoy = diaHoy();
+    const ahora = new Date();
+    const hoyStr = ahora.toDateString();
+    const hechos = new Set(historial.map((h) => new Date(h.fecha).toDateString()));
+
+    // ---- saludo + stats ----
+    root.querySelector('#saludo').textContent = `Hola, ${perfil.nombre ?? 'crack'} 👋 · ${perfil.tiempoMin} min al día`;
+    const esteMes = historial.filter((h) => {
+      const f = new Date(h.fecha);
+      return f.getMonth() === ahora.getMonth() && f.getFullYear() === ahora.getFullYear();
+    }).length;
+    root.querySelector('#stRacha').textContent = String(calcularRacha(perfil, historial));
+    root.querySelector('#stMes').textContent = String(esteMes);
+    root.querySelector('#stTotal').textContent = String(historial.length);
+
+    // ---- tarjeta de hoy ----
+    const hoyCard = root.querySelector('#hoyCard');
+    const programadoHoy = perfil.dias.includes(hoy);
+    const cumplidoHoy = hechos.has(hoyStr);
+    if (cumplidoHoy) {
+      hoyCard.className = 'hoy-card cumplido rise rise-1';
+      hoyCard.href = '/rutinas';
+      hoyCard.innerHTML = `<div class="hc-titulo">🏆 ¡Objetivo de hoy cumplido!</div>
+        <div class="hc-sub">Ya entrenaste hoy, ${perfil.nombre ?? ''}. Descansa o repite si te sobran ganas 💪</div>`;
+    } else if (programadoHoy) {
+      const n = (rutinas[hoy] || []).length;
+      hoyCard.className = 'hoy-card pendiente rise rise-1';
+      hoyCard.href = `/entrenar?dia=${hoy}`;
+      hoyCard.innerHTML = `<div class="hc-titulo">▶ Hoy toca entrenar</div>
+        <div class="hc-sub">${n} ejercicios · ~${n * settings.minPorEjercicio} min. ¡Dale, son solo ${perfil.tiempoMin} minutos!</div>`;
+    } else {
+      hoyCard.className = 'hoy-card rise rise-1';
+      hoyCard.href = '/rutinas';
+      hoyCard.innerHTML = `<div class="hc-titulo">😌 Hoy es día de descanso</div>
+        <div class="hc-sub">Tu próximo entrenamiento aparece abajo. ¿Ganas extra? Toca cualquier rutina.</div>`;
+    }
+
+    // ---- calendario del mes ----
+    const y = ahora.getFullYear();
+    const m = ahora.getMonth();
+    const diasEnMes = new Date(y, m + 1, 0).getDate();
+    const offset = (new Date(y, m, 1).getDay() + 6) % 7; // lunes = 0
+    root.querySelector('#calTitulo').textContent = ahora.toLocaleDateString('es', { month: 'long', year: 'numeric' });
+
+    const calBox = root.querySelector('#calDias');
+    let cumplidosMes = 0;
+    let programadosMes = 0;
+    let html = '<span class="cd vacio"></span>'.repeat(offset);
+    for (let d = 1; d <= diasEnMes; d++) {
+      const fecha = new Date(y, m, d);
+      const esFuturo = fecha > ahora && fecha.toDateString() !== hoyStr;
+      const programado = perfil.dias.includes(diaDe(fecha));
+      const hecho = hechos.has(fecha.toDateString());
+      if (programado && !esFuturo) programadosMes++;
+      if (hecho) cumplidosMes++;
+      const cls = [
+        'cd',
+        programado ? 'prog' : '',
+        hecho ? 'hecho' : '',
+        !hecho && programado && !esFuturo && fecha.toDateString() !== hoyStr ? 'fallado' : '',
+        fecha.toDateString() === hoyStr ? 'hoy' : '',
+        esFuturo ? 'futuro' : '',
+      ].filter(Boolean).join(' ');
+      html += `<span class="${cls}">${d}</span>`;
+    }
+    calBox.innerHTML = html;
+    root.querySelector('#calResumen').textContent = `${cumplidosMes}/${programadosMes} días cumplidos`;
+
+    // ---- lista de rutinas ----
+    const lista = root.querySelector('#listaDias');
+    const orden = [...perfil.dias].sort((a, b) => {
+      const ids = DIAS.map((d) => d.id);
+      // El día de hoy primero, luego el resto de la semana en orden
+      const rank = (x) => (ids.indexOf(x) - ids.indexOf(hoy) + 7) % 7;
+      return rank(a) - rank(b);
+    });
+
+    orden.forEach((diaId, i) => {
+      const info = DIAS.find((d) => d.id === diaId);
+      const ejercicios = rutinas[diaId] || [];
+      const esHoy = diaId === hoy;
+      const hechoHoy = esHoy && cumplidoHoy;
+      const totalMin = ejercicios.length * settings.minPorEjercicio;
+
+      const a = document.createElement('a');
+      a.href = `/entrenar?dia=${diaId}`;
+      a.className = `dia-card rise ${esHoy ? 'hoy' : ''}`;
+      a.style.animationDelay = `${0.2 + i * 0.06}s`;
+      a.style.viewTransitionName = `dia-${diaId}`;
+
+      const thumbs = ejercicios.slice(0, 4).map((e) => `<img src="/${e.image}" alt="" loading="lazy" />`).join('');
+      const extra = ejercicios.length > 4 ? `<div class="mas">+${ejercicios.length - 4}</div>` : '';
+
+      a.innerHTML = `
+        <div class="dia-top">
+          <h2>${info?.label ?? diaId} ${esHoy ? '<span class="tag accent">Hoy</span>' : ''}</h2>
+          <div class="dia-meta">
+            <span class="tag blue">${ejercicios.length} ejerc.</span>
+            <span class="tag green">~${totalMin} min</span>
+          </div>
+        </div>
+        <div class="thumbs">${thumbs}${extra}</div>
+        ${hechoHoy ? '<div class="hecho-hoy">✓ Completado hoy</div>' : ''}
+      `;
+      lista.appendChild(a);
+    });
+  });
+</script>

@@ -1,0 +1,275 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<Base title="Bienvenido">
+  <div id="onboarding">
+    <header class="ob-head rise">
+      <span class="logo">Sin<b>Panza</b></span>
+      <div class="progress"><div class="progress-fill" id="obProgress"></div></div>
+    </header>
+
+    <!-- Paso 0: bienvenida -->
+    <section class="paso activa" data-paso="0">
+      <div class="hero rise">
+        <div class="hero-emoji">🏃</div>
+        <h1>Tu entrenador<br />personal de bolsillo</h1>
+        <p class="muted">Rutinas a tu medida, guiadas por voz y pensadas para los minutos que sí tienes. Todo se guarda solo en tu dispositivo.</p>
+      </div>
+      <button class="btn rise rise-2" data-next>Empezar</button>
+    </section>
+
+    <!-- Paso 1: nombre -->
+    <section class="paso" data-paso="1">
+      <h2>¿Cómo te llamas?</h2>
+      <p class="muted">Para saludarte como se debe 😄</p>
+      <input type="text" id="nombreInput" class="input-texto" placeholder="Tu nombre" maxlength="30" autocomplete="given-name" />
+      <button class="btn" data-next disabled id="btnNombre">Continuar</button>
+    </section>
+
+    <!-- Paso 2: idioma -->
+    <section class="paso" data-paso="2">
+      <h2>¿En qué idioma quieres las instrucciones?</h2>
+      <p class="muted">Las explicaciones de cada ejercicio y el comando de voz usarán este idioma.</p>
+      <div class="chips" id="idiomaChips"></div>
+      <button class="btn" data-next>Continuar</button>
+    </section>
+
+    <!-- Paso 3: edad -->
+    <section class="paso" data-paso="3">
+      <h2>¿Cuántos años tienes?</h2>
+      <p class="muted">Nos ayuda a ajustar la intensidad.</p>
+      <div class="edad-box">
+        <output id="edadValor">30</output>
+        <input type="range" id="edadInput" min="14" max="80" value="30" />
+      </div>
+      <button class="btn" data-next>Continuar</button>
+    </section>
+
+    <!-- Paso 4: tipo de ejercicios -->
+    <section class="paso" data-paso="4">
+      <h2>¿Qué quieres trabajar?</h2>
+      <p class="muted">Elige todas las zonas que te interesen.</p>
+      <div class="chips" id="catChips"></div>
+      <button class="btn" data-next disabled id="btnCats">Continuar</button>
+    </section>
+
+    <!-- Paso 5: equipamiento -->
+    <section class="paso" data-paso="5">
+      <h2>¿Dónde y con qué entrenarás?</h2>
+      <p class="muted">Marca todo lo que tengas a mano. Solo te propondremos ejercicios que puedas hacer.</p>
+      <div class="chips" id="equipoChips"></div>
+      <button class="btn" data-next id="btnEquipo">Continuar</button>
+    </section>
+
+    <!-- Paso 6: tiempo -->
+    <section class="paso" data-paso="6">
+      <h2>¿Cuánto tiempo tienes por día?</h2>
+      <p class="muted">Sé realista: 15 minutos constantes valen más que una hora que nunca llega.</p>
+      <div class="chips" id="tiempoChips">
+        <button class="chip" data-min="10">10 min</button>
+        <button class="chip on" data-min="15">15 min ⭐</button>
+        <button class="chip" data-min="20">20 min</button>
+        <button class="chip" data-min="30">30 min</button>
+      </div>
+      <button class="btn" data-next>Continuar</button>
+    </section>
+
+    <!-- Paso 7: días -->
+    <section class="paso" data-paso="7">
+      <h2>¿Qué días entrenarás?</h2>
+      <p class="muted">Crearemos una rutina distinta para cada día.</p>
+      <div class="chips dias" id="diaChips"></div>
+      <button class="btn" disabled id="btnFinal">Crear mi plan 🚀</button>
+    </section>
+
+    <!-- Paso 8: generando -->
+    <section class="paso" data-paso="8">
+      <div class="hero">
+        <div class="hero-emoji girando">⚙️</div>
+        <h2>Armando tus rutinas…</h2>
+        <p class="muted">Eligiendo los mejores ejercicios para ti.</p>
+      </div>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .ob-head { display: flex; flex-direction: column; gap: 18px; margin-bottom: 34px; }
+  .logo { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.02em; }
+  .logo b { color: var(--accent); }
+  .progress { height: 5px; border-radius: 99px; background: var(--card); overflow: hidden; }
+  .progress-fill { height: 100%; width: 5%; border-radius: 99px; background: linear-gradient(90deg, var(--accent), #ff8c38); transition: width 0.4s ease; }
+
+  .paso { display: none; flex-direction: column; gap: 22px; }
+  .paso.activa { display: flex; animation: rise 0.35s ease both; }
+
+  .hero { display: flex; flex-direction: column; gap: 14px; padding: 30px 0 10px; text-align: center; align-items: center; }
+  .hero h1 { font-size: 2rem; line-height: 1.15; }
+  .hero-emoji { font-size: 4rem; }
+  .girando { animation: girar 2.2s linear infinite; }
+  @keyframes girar { to { transform: rotate(360deg); } }
+
+  .input-texto {
+    width: 100%; padding: 18px 20px; font-size: 1.15rem; font-weight: 600;
+    font-family: inherit; color: var(--text);
+    background: var(--card); border: 1.5px solid var(--border); border-radius: var(--radius);
+    outline: none; transition: border-color 0.2s;
+  }
+  .input-texto:focus { border-color: var(--accent); }
+
+  .edad-box { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 24px 0; }
+  .edad-box output { font-size: 4.5rem; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; }
+  input[type='range'] { width: 100%; accent-color: var(--accent); height: 34px; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+  .chips.dias { justify-content: center; }
+  .chips.dias :global(.chip) { width: 62px; height: 62px; justify-content: center; border-radius: 18px; font-size: 1.05rem; }
+</style>
+
+<script>
+  import { getProfile, saveProfile, saveRoutines, getSettings, CATEGORIAS, DIAS, IDIOMAS, EQUIPOS } from '../lib/db.js';
+  import { cargarEjercicios, generarRutinas } from '../lib/plan.js';
+  import { navigate } from 'astro:transitions/client';
+
+  document.addEventListener('astro:page-load', () => {
+    const root = document.getElementById('onboarding');
+    if (!root) return;
+
+    // Los perfiles viejos (sin idioma/equipo) vuelven a pasar por el onboarding.
+    // Con ?editar=1 se repite el onboarding sin perder el historial.
+    const previo = getProfile();
+    const editando = new URLSearchParams(location.search).has('editar');
+    if (previo && previo.nombre && previo.idioma && previo.equipo && !editando) {
+      navigate('/rutinas', { history: 'replace' });
+      return;
+    }
+
+    const estado = {
+      nombre: previo?.nombre ?? '',
+      idioma: previo?.idioma ?? 'es',
+      edad: previo?.edad ?? 30,
+      categorias: new Set(),
+      equipo: new Set(['cuerpo']),
+      tiempoMin: 15,
+      dias: new Set(),
+    };
+    let paso = 0;
+    const pasos = root.querySelectorAll('.paso');
+    const barra = root.querySelector('#obProgress');
+
+    const irA = (n) => {
+      paso = n;
+      pasos.forEach((p) => p.classList.toggle('activa', Number(p.dataset.paso) === n));
+      barra.style.width = `${Math.max(5, (n / 8) * 100)}%`;
+    };
+
+    root.querySelectorAll('[data-next]').forEach((b) => b.addEventListener('click', () => irA(paso + 1)));
+
+    // Nombre
+    const nombreInput = root.querySelector('#nombreInput');
+    nombreInput.value = estado.nombre;
+    root.querySelector('#btnNombre').disabled = estado.nombre.trim().length === 0;
+    nombreInput.addEventListener('input', () => {
+      estado.nombre = nombreInput.value;
+      root.querySelector('#btnNombre').disabled = nombreInput.value.trim().length === 0;
+    });
+
+    // Idioma
+    const idiomaBox = root.querySelector('#idiomaChips');
+    IDIOMAS.forEach((l) => {
+      const b = document.createElement('button');
+      b.className = 'chip' + (l.id === estado.idioma ? ' on' : '');
+      b.innerHTML = `${l.emoji} ${l.label}`;
+      b.addEventListener('click', () => {
+        estado.idioma = l.id;
+        idiomaBox.querySelectorAll('.chip').forEach((x) => x.classList.remove('on'));
+        b.classList.add('on');
+      });
+      idiomaBox.appendChild(b);
+    });
+
+    // Equipamiento / lugar de entrenamiento
+    const equipoBox = root.querySelector('#equipoChips');
+    EQUIPOS.forEach((e) => {
+      const b = document.createElement('button');
+      b.className = 'chip' + (estado.equipo.has(e.id) ? ' on' : '');
+      b.innerHTML = `${e.emoji} ${e.label}`;
+      b.addEventListener('click', () => {
+        estado.equipo.has(e.id) ? estado.equipo.delete(e.id) : estado.equipo.add(e.id);
+        b.classList.toggle('on');
+        // Siempre debe quedar al menos el peso corporal
+        if (estado.equipo.size === 0) {
+          estado.equipo.add('cuerpo');
+          equipoBox.querySelector('.chip').classList.add('on');
+        }
+      });
+      equipoBox.appendChild(b);
+    });
+
+    // Edad
+    const edadInput = root.querySelector('#edadInput');
+    edadInput.value = String(estado.edad);
+    root.querySelector('#edadValor').textContent = String(estado.edad);
+    edadInput.addEventListener('input', () => {
+      estado.edad = Number(edadInput.value);
+      root.querySelector('#edadValor').textContent = edadInput.value;
+    });
+
+    // Categorías
+    const catBox = root.querySelector('#catChips');
+    CATEGORIAS.forEach((c) => {
+      const b = document.createElement('button');
+      b.className = 'chip';
+      b.innerHTML = `${c.emoji} ${c.label}`;
+      b.addEventListener('click', () => {
+        estado.categorias.has(c.id) ? estado.categorias.delete(c.id) : estado.categorias.add(c.id);
+        b.classList.toggle('on');
+        root.querySelector('#btnCats').disabled = estado.categorias.size === 0;
+      });
+      catBox.appendChild(b);
+    });
+
+    // Tiempo
+    root.querySelectorAll('#tiempoChips .chip').forEach((b) =>
+      b.addEventListener('click', () => {
+        root.querySelectorAll('#tiempoChips .chip').forEach((x) => x.classList.remove('on'));
+        b.classList.add('on');
+        estado.tiempoMin = Number(b.dataset.min);
+      })
+    );
+
+    // Días
+    const diaBox = root.querySelector('#diaChips');
+    DIAS.forEach((d) => {
+      const b = document.createElement('button');
+      b.className = 'chip';
+      b.textContent = d.corto;
+      b.title = d.label;
+      b.addEventListener('click', () => {
+        estado.dias.has(d.id) ? estado.dias.delete(d.id) : estado.dias.add(d.id);
+        b.classList.toggle('on');
+        root.querySelector('#btnFinal').disabled = estado.dias.size === 0;
+      });
+      diaBox.appendChild(b);
+    });
+
+    root.querySelector('#btnFinal').addEventListener('click', async () => {
+      irA(8);
+      const perfil = {
+        nombre: estado.nombre.trim(),
+        idioma: estado.idioma,
+        edad: estado.edad,
+        categorias: [...estado.categorias],
+        equipo: [...estado.equipo],
+        tiempoMin: estado.tiempoMin,
+        dias: DIAS.map((d) => d.id).filter((id) => estado.dias.has(id)),
+        creado: new Date().toISOString(),
+      };
+      const ejercicios = await cargarEjercicios(perfil.idioma);
+      const rutinas = generarRutinas(perfil, ejercicios, getSettings());
+      saveProfile(perfil);
+      saveRoutines(rutinas);
+      setTimeout(() => navigate('/rutinas'), 700);
+    });
+  });
+</script>

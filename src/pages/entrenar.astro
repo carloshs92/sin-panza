@@ -1,0 +1,437 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<Base title="Entrenando">
+  <div id="player">
+    <header class="p-head">
+      <a href="/rutinas" class="volver" aria-label="Volver">←</a>
+      <div class="p-info">
+        <b id="pDia">—</b>
+        <span class="muted" id="pPos">Ejercicio 1 de 5</span>
+      </div>
+      <span class="mic-dot" id="micDot" title="Micrófono">🎙️</span>
+    </header>
+    <div class="barra"><div class="barra-fill" id="pBarra"></div></div>
+
+    <!-- Vista de ejercicio -->
+    <section id="vistaEjercicio" class="vista">
+      <div class="media card" id="mediaBox">
+        <img id="exGif" src="" alt="Demostración del ejercicio" />
+      </div>
+
+      <div class="ex-titulo">
+        <h1 id="exNombre">—</h1>
+        <div class="ex-tags" id="exTags"></div>
+      </div>
+
+      <div class="series-dots" id="seriesDots"></div>
+
+      <!-- Estado: esperando voz -->
+      <div class="estado" id="estEspera">
+        <div class="voz-circulo" id="vozCirculo">🎙️</div>
+        <p class="voz-msg">Di <b id="vozPalabra">«¡ahora!»</b> para empezar</p>
+        <p class="muted" id="vozEstado">Activa el micrófono para el control por voz</p>
+        <button class="btn small ghost" id="btnMic">🎙️ Activar micrófono</button>
+        <button class="btn" id="btnManual">▶ Empezar ahora</button>
+
+        <div class="config-inline card">
+          <div class="cfg">
+            <span>⏱️ Minutos</span>
+            <div class="stepper">
+              <button data-cfg="min" data-d="-1">−</button>
+              <b id="cfgMin">3</b>
+              <button data-cfg="min" data-d="1">+</button>
+            </div>
+          </div>
+          <div class="cfg">
+            <span>🔁 Series</span>
+            <div class="stepper">
+              <button data-cfg="ser" data-d="-1">−</button>
+              <b id="cfgSer">4</b>
+              <button data-cfg="ser" data-d="1">+</button>
+            </div>
+          </div>
+        </div>
+
+        <details class="pasos card" open>
+          <summary>📖 Cómo se hace</summary>
+          <button class="btn small ghost btn-leer" id="btnLeer">🔊 Escuchar instrucciones</button>
+          <ol id="exPasos"></ol>
+        </details>
+      </div>
+
+      <!-- Estado: trabajando / descanso -->
+      <div class="estado oculto" id="estTimer">
+        <div class="timer-wrap" id="timerWrap">
+          <svg viewBox="0 0 200 200" class="timer-svg">
+            <circle cx="100" cy="100" r="88" class="t-bg" />
+            <circle cx="100" cy="100" r="88" class="t-fg" id="tArco" />
+          </svg>
+          <div class="timer-centro">
+            <span class="t-fase" id="tFase">SERIE 1</span>
+            <b class="t-num" id="tNum">0:45</b>
+            <span class="muted t-hint" id="tHint">toca para pausar</span>
+          </div>
+        </div>
+        <button class="btn ghost small" id="btnSaltar">Saltar ejercicio →</button>
+      </div>
+    </section>
+
+    <!-- Vista final -->
+    <section id="vistaFin" class="vista oculto">
+      <div class="fin">
+        <div class="fin-emoji">🏆</div>
+        <h1>¡Entrenamiento completado!</h1>
+        <p class="muted" id="finResumen">—</p>
+        <a href="/rutinas" class="btn">Volver a mis rutinas</a>
+      </div>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .p-head { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+  .volver { font-size: 1.4rem; padding: 6px 12px; border-radius: 12px; background: var(--card); border: 1px solid var(--border); }
+  .p-info { flex: 1; display: flex; flex-direction: column; }
+  .p-info b { font-size: 1.05rem; }
+  .p-info span { font-size: 0.8rem; }
+  .mic-dot { font-size: 1.2rem; opacity: 0.3; transition: opacity 0.2s; }
+  .mic-dot.on { opacity: 1; filter: drop-shadow(0 0 8px var(--green)); }
+
+  .barra { height: 5px; border-radius: 99px; background: var(--card); overflow: hidden; margin-bottom: 20px; }
+  .barra-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), #ff8c38); border-radius: 99px; transition: width 0.5s ease; }
+
+  .vista { display: flex; flex-direction: column; gap: 16px; }
+  .oculto { display: none !important; }
+
+  .media { padding: 0; overflow: hidden; background: #fff; display: flex; justify-content: center; }
+  .media img { width: 100%; max-height: 300px; object-fit: contain; }
+
+  .ex-titulo h1 { font-size: 1.45rem; text-transform: capitalize; margin-bottom: 8px; }
+  .ex-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .series-dots { display: flex; gap: 10px; justify-content: center; }
+  .series-dots :global(span) {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--card); border: 1.5px solid var(--border);
+    transition: all 0.25s ease;
+  }
+  .series-dots :global(span.hecha) { background: var(--green); border-color: var(--green); }
+  .series-dots :global(span.actual) { background: var(--accent); border-color: var(--accent); transform: scale(1.25); }
+
+  .estado { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+
+  .voz-circulo {
+    width: 92px; height: 92px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.4rem; background: var(--accent-soft);
+    border: 2px solid var(--accent);
+  }
+  .voz-circulo.escuchando { animation: pulse-ring 1.6s ease-out infinite; }
+  .voz-msg { font-size: 1.15rem; }
+  .voz-msg b { color: var(--accent); }
+  #vozEstado { font-size: 0.85rem; text-align: center; }
+
+  .config-inline { display: flex; width: 100%; gap: 10px; padding: 14px; }
+  .cfg { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-dim); }
+  .stepper { display: flex; align-items: center; gap: 14px; }
+  .stepper button {
+    width: 36px; height: 36px; border-radius: 12px;
+    background: var(--bg-soft); border: 1px solid var(--border);
+    font-size: 1.2rem; color: var(--text);
+  }
+  .stepper b { font-size: 1.2rem; min-width: 24px; text-align: center; }
+
+  .pasos { width: 100%; }
+  .pasos summary { cursor: pointer; font-weight: 600; color: var(--text-dim); }
+  .btn-leer { margin-top: 12px; }
+  .btn-leer.leyendo { border-color: var(--blue); color: var(--blue); }
+  .pasos ol { margin: 12px 0 0 20px; display: flex; flex-direction: column; gap: 8px; color: var(--text-dim); font-size: 0.92rem; line-height: 1.5; }
+
+  .timer-wrap { position: relative; width: min(78vw, 320px); aspect-ratio: 1; cursor: pointer; }
+  .timer-svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .t-bg { fill: none; stroke: var(--card); stroke-width: 10; }
+  .t-fg {
+    fill: none; stroke: var(--accent); stroke-width: 10; stroke-linecap: round;
+    stroke-dasharray: 552.9; stroke-dashoffset: 0;
+    transition: stroke-dashoffset 0.95s linear, stroke 0.3s;
+  }
+  .timer-wrap.descanso .t-fg { stroke: var(--amber); }
+  .timer-wrap.pausado .t-fg { stroke: var(--text-dim); }
+  .timer-centro {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  }
+  .t-fase { font-size: 0.85rem; font-weight: 700; letter-spacing: 0.14em; color: var(--text-dim); }
+  .timer-wrap.descanso .t-fase { color: var(--amber); }
+  .t-num { font-size: 3.6rem; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  .t-hint { font-size: 0.72rem; }
+
+  .fin { display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; padding-top: 40px; }
+  .fin-emoji { font-size: 4.5rem; animation: rise 0.5s ease both; }
+  .fin h1 { font-size: 1.7rem; }
+</style>
+
+<script>
+  import { getProfile, getRoutines, getSettings, saveSettings, addHistory, getHistory, calcularRacha, DIAS } from '../lib/db.js';
+  import { initAudio, sonidoTick, sonidoGo, sonidoSerie, sonidoEjercicio, sonidoFin } from '../lib/audio.js';
+  import { soportaVoz, crearEscucha, vozDe } from '../lib/voice.js';
+  import { soportaTTS, leer, callar } from '../lib/tts.js';
+  import { navigate } from 'astro:transitions/client';
+
+  document.addEventListener('astro:page-load', () => {
+    const root = document.getElementById('player');
+    if (!root) return;
+
+    const $ = (id) => root.querySelector('#' + id);
+    const dia = new URLSearchParams(location.search).get('dia');
+    const rutina = getRoutines()[dia] || [];
+    const perfil = getProfile();
+    if (!perfil || rutina.length === 0) {
+      navigate('/', { history: 'replace' });
+      return;
+    }
+    const voz = vozDe(perfil.idioma);
+    $('vozPalabra').textContent = `«${voz.palabra}»`;
+
+    const settings = getSettings();
+    const CIRC = 2 * Math.PI * 88; // circunferencia del arco del timer
+
+    const st = {
+      idx: 0,
+      serie: 0,           // series completadas del ejercicio actual
+      fase: 'espera',     // espera | trabajo | descanso | fin
+      restante: 0,
+      total: 0,
+      pausado: false,
+      timerId: null,
+      inicio: Date.now(),
+      minPorEjercicio: settings.minPorEjercicio,
+      series: settings.series,
+      descanso: settings.descansoSeg,
+    };
+
+    let escucha = null;
+    let wakeLock = null;
+
+    const segundosPorSerie = () => Math.max(10, Math.round((st.minPorEjercicio * 60) / st.series));
+    const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+
+    // ---------- render ----------
+    function renderEjercicio() {
+      const ex = rutina[st.idx];
+      $('pDia').textContent = DIAS.find((d) => d.id === dia)?.label ?? dia;
+      $('pPos').textContent = `Ejercicio ${st.idx + 1} de ${rutina.length}`;
+      $('pBarra').style.width = `${(st.idx / rutina.length) * 100}%`;
+      $('exGif').src = '/' + ex.gif;
+      $('exNombre').textContent = ex.name;
+      $('exTags').innerHTML = `
+        <span class="tag accent">${ex.target}</span>
+        <span class="tag blue">${ex.equipment}</span>`;
+      $('exPasos').innerHTML = ex.steps.map((s) => `<li>${s}</li>`).join('');
+      $('cfgMin').textContent = String(st.minPorEjercicio);
+      $('cfgSer').textContent = String(st.series);
+      renderDots();
+      mostrarEstado('espera');
+    }
+
+    function renderDots() {
+      $('seriesDots').innerHTML = Array.from({ length: st.series }, (_, i) => {
+        const cls = i < st.serie ? 'hecha' : i === st.serie && st.fase !== 'espera' ? 'actual' : '';
+        return `<span class="${cls}"></span>`;
+      }).join('');
+    }
+
+    function mostrarEstado(fase) {
+      st.fase = fase;
+      $('estEspera').classList.toggle('oculto', fase !== 'espera');
+      $('estTimer').classList.toggle('oculto', fase === 'espera');
+      if (fase === 'espera') {
+        const puedeVoz = soportaVoz();
+        $('btnMic').classList.toggle('oculto', !puedeVoz || !!escucha);
+        if (!puedeVoz) $('vozEstado').textContent = 'Tu navegador no soporta voz: usa el botón';
+      }
+    }
+
+    // ---------- timer ----------
+    function arrancarCuenta(segundos, fase) {
+      clearInterval(st.timerId);
+      st.restante = segundos;
+      st.total = segundos;
+      st.fase = fase;
+      st.pausado = false;
+      pintarTimer();
+      st.timerId = setInterval(tick, 1000);
+    }
+
+    function tick() {
+      if (st.pausado) return;
+      st.restante--;
+      // Ticks sonoros en la cuenta regresiva del descanso
+      if (st.fase === 'descanso' && st.restante > 0) sonidoTick();
+      if (st.restante <= 0) {
+        clearInterval(st.timerId);
+        alTerminarFase();
+        return;
+      }
+      pintarTimer();
+    }
+
+    function pintarTimer() {
+      $('tNum').textContent = fmt(Math.max(0, st.restante));
+      $('tFase').textContent = st.fase === 'descanso' ? 'DESCANSO' : `SERIE ${st.serie + 1} / ${st.series}`;
+      $('tArco').style.strokeDashoffset = String(CIRC * (1 - st.restante / st.total));
+      $('timerWrap').classList.toggle('descanso', st.fase === 'descanso');
+      $('timerWrap').classList.toggle('pausado', st.pausado);
+      $('tHint').textContent = st.pausado ? 'pausado · toca para seguir' : 'toca para pausar';
+      renderDots();
+    }
+
+    function alTerminarFase() {
+      if (st.fase === 'trabajo') {
+        st.serie++;
+        if (st.serie >= st.series) {
+          siguienteEjercicio();
+        } else {
+          // Lapso de 5 s con sonido antes de la siguiente serie
+          arrancarCuenta(st.descanso, 'descanso');
+        }
+      } else if (st.fase === 'descanso') {
+        sonidoSerie();
+        arrancarCuenta(segundosPorSerie(), 'trabajo');
+      }
+    }
+
+    function empezarEjercicio() {
+      if (st.fase !== 'espera') return;
+      resetLectura();
+      initAudio();
+      sonidoGo();
+      st.serie = 0;
+      mostrarEstado('trabajo');
+      arrancarCuenta(segundosPorSerie(), 'trabajo');
+      pedirWakeLock();
+    }
+
+    function siguienteEjercicio() {
+      clearInterval(st.timerId);
+      resetLectura();
+      if (st.idx + 1 >= rutina.length) {
+        terminar();
+        return;
+      }
+      sonidoEjercicio();
+      st.idx++;
+      st.serie = 0;
+      // El siguiente ejercicio siempre espera el comando de voz «ahora»
+      renderEjercicio();
+      document.startViewTransition?.(() => {});
+    }
+
+    function terminar() {
+      sonidoFin();
+      st.fase = 'fin';
+      escucha?.stop();
+      wakeLock?.release?.();
+      const min = Math.max(1, Math.round((Date.now() - st.inicio) / 60000));
+      addHistory({ fecha: new Date().toISOString(), dia, ejercicios: rutina.length, duracionMin: min });
+      $('pBarra').style.width = '100%';
+      const racha = calcularRacha(perfil, getHistory());
+      $('finResumen').textContent =
+        `${rutina.length} ejercicios · ${min} min · ${DIAS.find((d) => d.id === dia)?.label}` +
+        (racha > 1 ? ` · 🔥 ¡Racha de ${racha} días!` : '');
+      $('vistaEjercicio').classList.add('oculto');
+      $('vistaFin').classList.remove('oculto');
+    }
+
+    async function pedirWakeLock() {
+      try { wakeLock = await navigator.wakeLock?.request('screen'); } catch { /* opcional */ }
+    }
+
+    // ---------- lectura de instrucciones (TTS) ----------
+    let leyendo = false;
+
+    function resetLectura() {
+      callar();
+      leyendo = false;
+      $('btnLeer').textContent = '🔊 Escuchar instrucciones';
+      $('btnLeer').classList.remove('leyendo');
+    }
+
+    if (!soportaTTS()) $('btnLeer').classList.add('oculto');
+    $('btnLeer').addEventListener('click', () => {
+      if (leyendo) {
+        resetLectura();
+        return;
+      }
+      const ex = rutina[st.idx];
+      // Pausa el micrófono mientras habla para que la propia voz no dispare el comando
+      const micEstaba = !!escucha?.activo;
+      if (micEstaba) escucha.stop();
+      leyendo = true;
+      $('btnLeer').textContent = '⏹ Detener lectura';
+      $('btnLeer').classList.add('leyendo');
+      const texto = ex.steps.map((s, i) => `${i + 1}. ${s}`).join(' ');
+      leer(texto, perfil.idioma, () => {
+        leyendo = false;
+        $('btnLeer').textContent = '🔊 Escuchar instrucciones';
+        $('btnLeer').classList.remove('leyendo');
+        if (micEstaba && st.fase === 'espera') escucha.start();
+      });
+    });
+
+    // ---------- voz ----------
+    function activarMic() {
+      initAudio();
+      if (!escucha) {
+        escucha = crearEscucha({
+          idioma: perfil.idioma,
+          onComando: () => {
+            if (st.fase === 'espera') empezarEjercicio();
+          },
+          onEstado: (e) => {
+            $('micDot').classList.toggle('on', e === 'escuchando');
+            $('vozCirculo').classList.toggle('escuchando', e === 'escuchando');
+            if (e === 'escuchando') $('vozEstado').textContent = `Escuchando… di «${voz.palabra}» cuando estés en posición`;
+            if (e === 'denegado') $('vozEstado').textContent = 'Micrófono denegado: usa el botón para empezar';
+          },
+        });
+      }
+      escucha?.start();
+      $('btnMic').classList.add('oculto');
+    }
+
+    // ---------- eventos ----------
+    $('btnMic').addEventListener('click', activarMic);
+    $('btnManual').addEventListener('click', empezarEjercicio);
+    $('btnSaltar').addEventListener('click', siguienteEjercicio);
+    $('timerWrap').addEventListener('click', () => {
+      if (st.fase === 'trabajo' || st.fase === 'descanso') {
+        st.pausado = !st.pausado;
+        pintarTimer();
+      }
+    });
+
+    root.querySelectorAll('.stepper button').forEach((b) =>
+      b.addEventListener('click', () => {
+        const d = Number(b.dataset.d);
+        if (b.dataset.cfg === 'min') st.minPorEjercicio = Math.min(10, Math.max(1, st.minPorEjercicio + d));
+        else st.series = Math.min(8, Math.max(1, st.series + d));
+        $('cfgMin').textContent = String(st.minPorEjercicio);
+        $('cfgSer').textContent = String(st.series);
+        saveSettings({ ...getSettings(), minPorEjercicio: st.minPorEjercicio, series: st.series });
+        renderDots();
+      })
+    );
+
+    // Limpieza al salir de la página (view transitions no recargan)
+    document.addEventListener('astro:before-swap', () => {
+      clearInterval(st.timerId);
+      callar();
+      escucha?.stop();
+      wakeLock?.release?.();
+    }, { once: true });
+
+    renderEjercicio();
+  });
+</script>

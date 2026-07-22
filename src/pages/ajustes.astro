@@ -1,0 +1,195 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<Base title="Ajustes" nav="ajustes">
+  <div id="ajustes">
+    <h1 class="rise">Ajustes</h1>
+
+    <section class="card rise rise-1">
+      <h2>Entrenamiento</h2>
+      <label class="fila">
+        <span>⏱️ Minutos por ejercicio</span>
+        <input type="number" id="ajMin" min="1" max="10" />
+      </label>
+      <label class="fila">
+        <span>🔁 Series por ejercicio</span>
+        <input type="number" id="ajSer" min="1" max="8" />
+      </label>
+      <label class="fila">
+        <span>😮‍💨 Descanso entre series (seg)</span>
+        <input type="number" id="ajDes" min="3" max="60" />
+      </label>
+      <button class="btn small" id="btnGuardar">Guardar</button>
+      <p class="ok muted" id="msgOk"></p>
+    </section>
+
+    <section class="card rise rise-2">
+      <h2>Mi plan</h2>
+      <p class="muted" id="planResumen">—</p>
+      <button class="btn small ghost" id="btnRegenerar">🎲 Regenerar rutinas</button>
+      <a class="btn small ghost" href="/?editar=1">✏️ Editar mi plan (idioma, equipo, días…)</a>
+    </section>
+
+    <section class="card rise rise-3">
+      <h2>Aplicación</h2>
+      <p class="muted">Instálala en tu pantalla de inicio para abrirla como una app, a pantalla completa y sin conexión.</p>
+      <button class="btn small" id="btnInstalar">📲 Añadir a pantalla de inicio</button>
+      <p class="muted oculto" id="msgInstalada">✓ Ya está instalada en este dispositivo.</p>
+      <p class="muted oculto" id="msgManual">En tu navegador: abre el menú (⋮ o ≡) y busca <b>«Instalar aplicación»</b> o <b>«Añadir a pantalla de inicio»</b>.</p>
+      <div class="muted oculto ios-pasos" id="iosPasos">
+        En iPhone/iPad hazlo desde Safari:
+        <ol>
+          <li>Toca el botón <b>Compartir</b> <span class="ic">⎋</span> (cuadrado con flecha).</li>
+          <li>Elige <b>«Añadir a pantalla de inicio»</b>.</li>
+          <li>Confirma con <b>Añadir</b>.</li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="card rise rise-3 peligro">
+      <h2>Datos</h2>
+      <p class="muted">Todo se guarda solo en este dispositivo.</p>
+      <button class="btn small ghost" id="btnReset">🗑️ Borrar todo y empezar de cero</button>
+    </section>
+  </div>
+
+  <!-- Alerta de confirmación para borrar -->
+  <div class="modal-fondo oculto" id="modalReset">
+    <div class="modal">
+      <div class="modal-emoji">⚠️</div>
+      <h2>¿Seguro que quieres borrar todo?</h2>
+      <p class="muted">Se eliminará tu perfil, tus rutinas y todo tu historial de entrenamientos. <b>Esta acción no se puede deshacer.</b></p>
+      <button class="btn peligro-btn" id="btnResetConfirmar">Sí, borrar todo</button>
+      <button class="btn ghost" id="btnResetCancelar">Cancelar</button>
+    </div>
+  </div>
+</Base>
+
+<style>
+  #ajustes { display: flex; flex-direction: column; gap: 16px; }
+  #ajustes h1 { font-size: 1.7rem; margin-bottom: 8px; }
+  .card h2 { font-size: 1.05rem; margin-bottom: 14px; }
+  .card { display: flex; flex-direction: column; gap: 12px; }
+  .fila { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 0.95rem; color: var(--text-dim); }
+  .fila input {
+    width: 76px; padding: 10px; text-align: center;
+    background: var(--bg-soft); border: 1px solid var(--border); border-radius: 12px;
+    color: var(--text); font-family: inherit; font-size: 1rem; font-weight: 700;
+  }
+  .ok { font-size: 0.85rem; color: var(--green); min-height: 1em; }
+  .peligro { border-color: rgba(255, 92, 56, 0.3); }
+  .oculto { display: none !important; }
+
+  .ios-pasos { font-size: 0.9rem; line-height: 1.6; }
+  .ios-pasos ol { margin: 8px 0 0 20px; }
+  .ic { display: inline-block; transform: translateY(-1px); }
+
+  .modal-fondo {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(5, 6, 10, 0.75);
+    backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    animation: rise 0.2s ease both;
+  }
+  .modal {
+    width: 100%; max-width: 380px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 22px; padding: 26px;
+    display: flex; flex-direction: column; gap: 14px; text-align: center;
+    animation: rise 0.25s ease both;
+  }
+  .modal-emoji { font-size: 2.6rem; }
+  .modal h2 { font-size: 1.2rem; }
+  .modal p { font-size: 0.92rem; line-height: 1.5; }
+  .peligro-btn { background: #d92d20; box-shadow: 0 8px 24px rgba(217, 45, 32, 0.35); }
+</style>
+
+<script>
+  import { getProfile, getSettings, saveSettings, getRoutines, saveRoutines, resetAll, DIAS, CATEGORIAS, IDIOMAS, EQUIPOS } from '../lib/db.js';
+  import { cargarEjercicios, generarRutinas } from '../lib/plan.js';
+  import { navigate } from 'astro:transitions/client';
+
+  document.addEventListener('astro:page-load', () => {
+    const root = document.getElementById('ajustes');
+    if (!root) return;
+
+    const perfil = getProfile();
+    if (!perfil) {
+      navigate('/', { history: 'replace' });
+      return;
+    }
+
+    const $ = (id) => root.querySelector('#' + id);
+    const s = getSettings();
+    $('ajMin').value = s.minPorEjercicio;
+    $('ajSer').value = s.series;
+    $('ajDes').value = s.descansoSeg;
+
+    const cats = perfil.categorias.map((c) => CATEGORIAS.find((x) => x.id === c)?.label ?? c).join(', ');
+    const dias = perfil.dias.map((d) => DIAS.find((x) => x.id === d)?.corto).join(' · ');
+    const idioma = IDIOMAS.find((x) => x.id === perfil.idioma);
+    const equipo = (perfil.equipo || []).map((e) => EQUIPOS.find((x) => x.id === e)?.label ?? e).join(', ');
+    $('planResumen').textContent =
+      `${perfil.edad} años · ${perfil.tiempoMin} min/día · ${cats} · Días: ${dias}` +
+      (idioma ? ` · ${idioma.emoji} ${idioma.label}` : '') +
+      (equipo ? ` · Equipo: ${equipo}` : '');
+
+    $('btnGuardar').addEventListener('click', () => {
+      saveSettings({
+        minPorEjercicio: Math.min(10, Math.max(1, Number($('ajMin').value) || 3)),
+        series: Math.min(8, Math.max(1, Number($('ajSer').value) || 4)),
+        descansoSeg: Math.min(60, Math.max(3, Number($('ajDes').value) || 5)),
+      });
+      $('msgOk').textContent = '✓ Guardado';
+      setTimeout(() => ($('msgOk').textContent = ''), 2000);
+    });
+
+    $('btnRegenerar').addEventListener('click', async () => {
+      $('btnRegenerar').textContent = 'Generando…';
+      const ejercicios = await cargarEjercicios(perfil.idioma);
+      saveRoutines(generarRutinas(perfil, ejercicios, getSettings()));
+      navigate('/rutinas');
+    });
+
+    // ---- instalación en pantalla de inicio (PWA) ----
+    const btnInstalar = $('btnInstalar');
+    const esIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const yaInstalada = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+
+    if (yaInstalada) {
+      btnInstalar.classList.add('oculto');
+      $('msgInstalada').classList.remove('oculto');
+    }
+
+    btnInstalar.addEventListener('click', async () => {
+      const prompt = window.__installPrompt;
+      if (prompt) {
+        prompt.prompt();
+        const { outcome } = await prompt.userChoice;
+        if (outcome === 'accepted') {
+          window.__installPrompt = null;
+          btnInstalar.classList.add('oculto');
+          $('msgInstalada').classList.remove('oculto');
+        }
+      } else if (esIOS) {
+        $('iosPasos').classList.toggle('oculto');
+      } else {
+        $('msgManual').classList.toggle('oculto');
+      }
+    });
+
+    // ---- borrar todo, con alerta de confirmación ----
+    const modal = document.getElementById('modalReset');
+    $('btnReset').addEventListener('click', () => modal.classList.remove('oculto'));
+    document.getElementById('btnResetCancelar').addEventListener('click', () => modal.classList.add('oculto'));
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.classList.add('oculto');
+    });
+    document.getElementById('btnResetConfirmar').addEventListener('click', () => {
+      resetAll();
+      navigate('/', { history: 'replace' });
+    });
+  });
+</script>
