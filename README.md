@@ -3,6 +3,8 @@
 Webapp en **Astro 5** con View Transitions que convierte el catálogo de ExerciseDB
 (`../exercises-dataset-main`) en un entrenador personal guiado por voz.
 
+Lo que viene y en qué orden: **[ROADMAP.md](ROADMAP.md)**.
+
 ## Correr
 
 Requiere Node 18.17+ (hay `.nvmrc` con 22):
