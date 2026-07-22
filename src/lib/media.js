@@ -14,3 +14,19 @@ export const MEDIA_BASE = import.meta.env.PUBLIC_MEDIA_BASE ?? CDN;
 export const mediaUrl = (ruta) => `${MEDIA_BASE}/${ruta}`;
 
 export const ATRIBUCION = '© Gym visual — gymvisual.com';
+
+// Precarga en segundo plano. El media es inmutable, así que una vez descargado
+// queda en la caché del service worker y del navegador para siempre.
+export function precargar(rutas) {
+  if (typeof window === 'undefined' || !rutas?.length) return;
+  const bajar = () => {
+    for (const ruta of rutas) {
+      if (!ruta) continue;
+      const img = new Image();
+      img.decoding = 'async';
+      img.src = mediaUrl(ruta);
+    }
+  };
+  if ('requestIdleCallback' in window) requestIdleCallback(bajar, { timeout: 3000 });
+  else setTimeout(bajar, 600);
+}

@@ -32,6 +32,13 @@ export const saveSettings = (s) => write(K.settings, s);
 export const getRoutines = () => read(K.routines, {});
 export const saveRoutines = (r) => write(K.routines, r);
 
+export const getRoutineDay = (dia) => getRoutines()[dia] || [];
+export const saveRoutineDay = (dia, ejercicios) => {
+  const r = getRoutines();
+  r[dia] = ejercicios;
+  saveRoutines(r);
+};
+
 export const getHistory = () => read(K.history, []);
 export const addHistory = (entry) => {
   const h = getHistory();
