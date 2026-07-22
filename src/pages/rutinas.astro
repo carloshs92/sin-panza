@@ -102,14 +102,21 @@ import Base from '../layouts/Base.astro';
   .lista { display: flex; flex-direction: column; gap: 14px; }
 
   .lista :global(.dia-card) {
-    display: block;
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 18px;
-    transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    overflow: hidden;
+    transition: border-color 0.18s ease, background 0.18s ease;
   }
-  .lista :global(.dia-card:active) { transform: scale(0.98); }
+  .lista :global(.dia-main) { display: block; padding: 18px; transition: transform 0.18s ease; }
+  .lista :global(.dia-main:active) { transform: scale(0.98); }
+  .lista :global(.dia-editar) {
+    display: block; padding: 11px; text-align: center;
+    border-top: 1px solid var(--border);
+    font-size: 0.82rem; font-weight: 600; color: var(--text-dim);
+    transition: color 0.15s, background 0.15s;
+  }
+  .lista :global(.dia-editar:active) { color: var(--accent); background: var(--accent-soft); }
   .lista :global(.dia-card.hoy) { border-color: var(--accent); background: linear-gradient(140deg, var(--accent-soft), var(--card) 55%); }
 
   .lista :global(.dia-top) { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
@@ -131,7 +138,7 @@ import Base from '../layouts/Base.astro';
 
 <script>
   import { getProfile, getRoutines, getSettings, getHistory, calcularRacha, DIAS, diaHoy, diaDe } from '../lib/db.js';
-  import { mediaUrl } from '../lib/media.js';
+  import { mediaUrl, precargar } from '../lib/media.js';
   import { navigate } from 'astro:transitions/client';
 
   document.addEventListener('astro:page-load', () => {
@@ -231,27 +238,36 @@ import Base from '../layouts/Base.astro';
       const hechoHoy = esHoy && cumplidoHoy;
       const totalMin = ejercicios.length * settings.minPorEjercicio;
 
-      const a = document.createElement('a');
-      a.href = `/entrenar?dia=${diaId}`;
-      a.className = `dia-card rise ${esHoy ? 'hoy' : ''}`;
-      a.style.animationDelay = `${0.2 + i * 0.06}s`;
-      a.style.viewTransitionName = `dia-${diaId}`;
+      const card = document.createElement('div');
+      card.className = `dia-card rise ${esHoy ? 'hoy' : ''}`;
+      card.style.animationDelay = `${0.2 + i * 0.06}s`;
+      card.style.viewTransitionName = `dia-${diaId}`;
 
-      const thumbs = ejercicios.slice(0, 4).map((e) => `<img src="${mediaUrl(e.image)}" alt="" loading="lazy" />`).join('');
+      const thumbs = ejercicios
+        .slice(0, 4)
+        .map((e) => `<img src="${mediaUrl(e.image)}" alt="" loading="lazy" decoding="async" />`)
+        .join('');
       const extra = ejercicios.length > 4 ? `<div class="mas">+${ejercicios.length - 4}</div>` : '';
 
-      a.innerHTML = `
-        <div class="dia-top">
-          <h2>${info?.label ?? diaId} ${esHoy ? '<span class="tag accent">Hoy</span>' : ''}</h2>
-          <div class="dia-meta">
-            <span class="tag blue">${ejercicios.length} ejerc.</span>
-            <span class="tag green">~${totalMin} min</span>
+      card.innerHTML = `
+        <a class="dia-main" href="/entrenar?dia=${diaId}">
+          <div class="dia-top">
+            <h2>${info?.label ?? diaId} ${esHoy ? '<span class="tag accent">Hoy</span>' : ''}</h2>
+            <div class="dia-meta">
+              <span class="tag blue">${ejercicios.length} ejerc.</span>
+              <span class="tag green">~${totalMin} min</span>
+            </div>
           </div>
-        </div>
-        <div class="thumbs">${thumbs}${extra}</div>
-        ${hechoHoy ? '<div class="hecho-hoy">✓ Completado hoy</div>' : ''}
+          <div class="thumbs">${thumbs}${extra}</div>
+          ${hechoHoy ? '<div class="hecho-hoy">✓ Completado hoy</div>' : ''}
+        </a>
+        <a class="dia-editar" href="/editar?dia=${diaId}">✏️ Editar rutina</a>
       `;
-      lista.appendChild(a);
+      lista.appendChild(card);
     });
+
+    // Deja lista la caché del media de toda la semana (miniaturas y GIFs del día de hoy)
+    precargar(orden.flatMap((d) => (rutinas[d] || []).map((e) => e.image)));
+    precargar((rutinas[hoy] || []).slice(0, 2).map((e) => e.gif));
   });
 </script>

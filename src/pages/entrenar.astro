@@ -180,7 +180,7 @@ import Base from '../layouts/Base.astro';
   import { initAudio, sonidoTick, sonidoGo, sonidoSerie, sonidoEjercicio, sonidoFin } from '../lib/audio.js';
   import { soportaVoz, crearEscucha, vozDe } from '../lib/voice.js';
   import { soportaTTS, leer, callar } from '../lib/tts.js';
-  import { mediaUrl } from '../lib/media.js';
+  import { mediaUrl, precargar } from '../lib/media.js';
   import { navigate } from 'astro:transitions/client';
 
   document.addEventListener('astro:page-load', () => {
@@ -191,8 +191,13 @@ import Base from '../layouts/Base.astro';
     const dia = new URLSearchParams(location.search).get('dia');
     const rutina = getRoutines()[dia] || [];
     const perfil = getProfile();
-    if (!perfil || rutina.length === 0) {
+    if (!perfil) {
       navigate('/', { history: 'replace' });
+      return;
+    }
+    // Un día sin ejercicios (los quitaste todos) manda al editor
+    if (rutina.length === 0) {
+      navigate(`/editar?dia=${dia}`, { history: 'replace' });
       return;
     }
     const voz = vozDe(perfil.idioma);
@@ -237,6 +242,9 @@ import Base from '../layouts/Base.astro';
       $('cfgSer').textContent = String(st.series);
       renderDots();
       mostrarEstado('espera');
+      // El GIF del siguiente ejercicio se descarga mientras haces este
+      const sig = rutina[st.idx + 1];
+      if (sig) precargar([sig.gif]);
     }
 
     function renderDots() {

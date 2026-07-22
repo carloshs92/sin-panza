@@ -1,0 +1,228 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<Base title="Buscar ejercicio">
+  <div id="buscador">
+    <header class="b-head">
+      <a class="volver" id="btnVolver" href="/rutinas" aria-label="Volver">←</a>
+      <div class="b-info">
+        <b id="bTitulo">Elegir ejercicio</b>
+        <span class="muted" id="bSub"></span>
+      </div>
+    </header>
+
+    <input type="search" id="q" class="input-buscar" placeholder="🔍 Buscar por nombre…" autocomplete="off" />
+
+    <div class="filtros">
+      <div class="chips" id="catChips"></div>
+      <label class="switch">
+        <input type="checkbox" id="soloMio" checked />
+        <span>Solo lo que puedo hacer con mi equipo</span>
+      </label>
+    </div>
+
+    <p class="muted conteo" id="conteo">—</p>
+
+    <div class="resultados" id="resultados"></div>
+    <div id="centinela"></div>
+    <p class="muted fin-lista oculto" id="finLista">— fin de los resultados —</p>
+  </div>
+</Base>
+
+<style>
+  .b-head { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+  .volver { font-size: 1.4rem; padding: 6px 12px; border-radius: 12px; background: var(--card); border: 1px solid var(--border); }
+  .b-info { display: flex; flex-direction: column; }
+  .b-info b { font-size: 1.15rem; }
+  .b-info span { font-size: 0.8rem; }
+
+  .input-buscar {
+    width: 100%; padding: 15px 18px; margin-bottom: 14px;
+    font-size: 1rem; font-family: inherit; color: var(--text);
+    background: var(--card); border: 1.5px solid var(--border); border-radius: var(--radius);
+    outline: none; transition: border-color 0.2s;
+  }
+  .input-buscar:focus { border-color: var(--accent); }
+
+  .filtros { display: flex; flex-direction: column; gap: 12px; margin-bottom: 14px; }
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chips :global(.chip) { padding: 9px 15px; font-size: 0.85rem; white-space: nowrap; flex-shrink: 0; }
+
+  .switch { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--text-dim); cursor: pointer; }
+  .switch input { width: 18px; height: 18px; accent-color: var(--accent); }
+
+  .conteo { font-size: 0.8rem; margin-bottom: 10px; }
+
+  .resultados { display: flex; flex-direction: column; gap: 10px; }
+  .resultados :global(.res) {
+    display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+  }
+  .resultados :global(.res:active) { transform: scale(0.98); border-color: var(--accent); }
+  .resultados :global(.res img) {
+    width: 58px; height: 58px; flex-shrink: 0;
+    border-radius: 12px; background: #fff; object-fit: contain;
+  }
+  .resultados :global(.res-datos) { flex: 1; min-width: 0; }
+  .resultados :global(.res-datos b) {
+    display: block; font-size: 0.95rem; text-transform: capitalize;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .resultados :global(.res-tags) { display: flex; gap: 6px; margin-top: 5px; flex-wrap: wrap; }
+  .resultados :global(.ya) { font-size: 0.7rem; color: var(--green); font-weight: 700; margin-top: 4px; }
+  .resultados :global(.flecha) { color: var(--text-dim); font-size: 1.2rem; flex-shrink: 0; }
+
+  .fin-lista, .vacio { text-align: center; padding: 20px; font-size: 0.85rem; }
+  .oculto { display: none !important; }
+  #centinela { height: 1px; }
+</style>
+
+<script>
+  import { getProfile, getRoutineDay, saveRoutineDay, CATEGORIAS, DIAS } from '../lib/db.js';
+  import { cargarEjercicios, equipoPermitido, estructurasPermitidas } from '../lib/plan.js';
+  import { mediaUrl, precargar } from '../lib/media.js';
+  import { navigate } from 'astro:transitions/client';
+
+  document.addEventListener('astro:page-load', async () => {
+    const root = document.getElementById('buscador');
+    if (!root) return;
+
+    const $ = (id) => root.querySelector('#' + id);
+    const params = new URLSearchParams(location.search);
+    const dia = params.get('dia');
+    const pos = params.get('pos'); // índice a reemplazar, o "nueva" para añadir
+    const perfil = getProfile();
+    if (!perfil || !dia || !perfil.dias.includes(dia)) {
+      navigate('/rutinas', { history: 'replace' });
+      return;
+    }
+
+    const rutina = getRoutineDay(dia);
+    const enRutina = new Set(rutina.map((e) => e.id));
+    const reemplazando = pos !== 'nueva';
+    const actual = reemplazando ? rutina[Number(pos)] : null;
+
+    $('btnVolver').href = `/editar?dia=${dia}`;
+    $('bTitulo').textContent = reemplazando ? 'Cambiar ejercicio' : 'Añadir ejercicio';
+    $('bSub').textContent = reemplazando && actual
+      ? `${DIAS.find((d) => d.id === dia)?.label} · sustituye a "${actual.name}"`
+      : DIAS.find((d) => d.id === dia)?.label ?? '';
+
+    // ---- filtros ----
+    const permitido = equipoPermitido(perfil);
+    const estructuras = estructurasPermitidas(perfil);
+    const puedeHacerlo = (e) => {
+      if (permitido && !permitido.has(e.equipment)) return false;
+      if (e.req && estructuras && !estructuras.has(e.req)) return false;
+      return true;
+    };
+
+    let categoria = null;
+    let texto = '';
+    let soloMio = true;
+
+    const catBox = $('catChips');
+    CATEGORIAS.forEach((c) => {
+      const b = document.createElement('button');
+      b.className = 'chip';
+      b.innerHTML = `${c.emoji} ${c.label}`;
+      b.addEventListener('click', () => {
+        categoria = categoria === c.id ? null : c.id;
+        catBox.querySelectorAll('.chip').forEach((x) => x.classList.remove('on'));
+        if (categoria) b.classList.add('on');
+        filtrar();
+      });
+      catBox.appendChild(b);
+    });
+
+    $('q').addEventListener('input', (ev) => {
+      texto = ev.target.value.toLowerCase().trim();
+      filtrar();
+    });
+    $('soloMio').addEventListener('change', (ev) => {
+      soloMio = ev.target.checked;
+      filtrar();
+    });
+
+    // ---- datos ----
+    $('conteo').textContent = 'Cargando ejercicios…';
+    const todos = await cargarEjercicios(perfil.idioma);
+
+    let filtrados = [];
+    let pintados = 0;
+    const LOTE = 30;
+
+    function filtrar() {
+      filtrados = todos.filter((e) => {
+        if (soloMio && !puedeHacerlo(e)) return false;
+        if (categoria && e.category !== categoria) return false;
+        if (texto && !e.name.toLowerCase().includes(texto) && !e.target.toLowerCase().includes(texto)) return false;
+        return true;
+      });
+      pintados = 0;
+      $('resultados').innerHTML = '';
+      $('conteo').textContent = `${filtrados.length} ejercicios disponibles`;
+      $('finLista').classList.add('oculto');
+      pintarLote();
+    }
+
+    // Render incremental: 1.324 ejercicios de golpe serían miles de imágenes
+    function pintarLote() {
+      const lote = filtrados.slice(pintados, pintados + LOTE);
+      if (lote.length === 0) {
+        if (filtrados.length === 0) {
+          $('resultados').innerHTML = '<p class="vacio muted">No hay ejercicios con esos filtros.<br />Prueba desactivar «solo lo que puedo hacer».</p>';
+        } else {
+          $('finLista').classList.remove('oculto');
+        }
+        return;
+      }
+
+      const html = lote
+        .map(
+          (e) => `
+        <button class="res" data-id="${e.id}">
+          <img src="${mediaUrl(e.image)}" alt="" loading="lazy" decoding="async" />
+          <div class="res-datos">
+            <b>${e.name}</b>
+            <div class="res-tags">
+              <span class="tag accent">${e.target}</span>
+              <span class="tag blue">${e.equipment}</span>
+              ${e.req ? `<span class="tag green">${e.req === 'barra' ? 'barra' : 'banco'}</span>` : ''}
+            </div>
+            ${enRutina.has(e.id) ? '<div class="ya">✓ ya está en esta rutina</div>' : ''}
+          </div>
+          <span class="flecha">›</span>
+        </button>`
+        )
+        .join('');
+      $('resultados').insertAdjacentHTML('beforeend', html);
+      pintados += lote.length;
+      precargar(lote.map((e) => e.image));
+    }
+
+    // Scroll infinito
+    new IntersectionObserver((entradas) => {
+      if (entradas[0].isIntersecting && filtrados.length) pintarLote();
+    }, { rootMargin: '400px' }).observe($('centinela'));
+
+    // ---- elegir ----
+    $('resultados').addEventListener('click', (ev) => {
+      const btn = ev.target.closest('.res');
+      if (!btn) return;
+      const elegido = todos.find((e) => e.id === btn.dataset.id);
+      if (!elegido) return;
+
+      const lista = getRoutineDay(dia);
+      if (reemplazando) lista[Number(pos)] = elegido;
+      else lista.push(elegido);
+      saveRoutineDay(dia, lista);
+      navigate(`/editar?dia=${dia}`);
+    });
+
+    filtrar();
+  });
+</script>

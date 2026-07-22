@@ -50,7 +50,21 @@ Astro, corre `pnpm run build` y publica `dist/`. No definas Root Directory.
      con el micrófono activado — hay botón de respaldo si no hay voz.
    - Entre series hay un descanso de **5 s con ticks sonoros**; otro sonido marca
      la siguiente serie y una campanilla el cambio de ejercicio.
-4. **Ajustes** (`/ajustes`): minutos/series/descanso, regenerar rutinas, borrar todo.
+4. **Editar** (`/editar?dia=lunes`): reordena los ejercicios del día, cámbialos o
+   quítalos. Cada cambio se guarda al instante.
+5. **Buscar** (`/buscar?dia=lunes&pos=2`): catálogo completo con búsqueda por
+   nombre, filtro por zona y, activado por defecto, «solo lo que puedo hacer con
+   mi equipo». Se pinta de a 30 con scroll infinito. `pos=nueva` añade al final.
+6. **Ajustes** (`/ajustes`): minutos/series/descanso, instalar la app,
+   regenerar rutinas, borrar todo.
+
+## Caché del media
+
+Las ilustraciones nunca cambian, así que el service worker usa **dos cachés**:
+`sinpanza-shell-vN` (versionada, se renueva al actualizar la app) y
+`sinpanza-media` (sin versión, **nunca se borra**). Además se precargan en
+segundo plano las miniaturas de la semana, los GIFs de las siguientes series y
+los resultados de búsqueda ya vistos.
 
 ## Datos
 

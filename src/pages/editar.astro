@@ -1,0 +1,163 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<Base title="Editar rutina">
+  <div id="editor">
+    <header class="e-head">
+      <a href="/rutinas" class="volver" aria-label="Volver">←</a>
+      <div class="e-info">
+        <b id="eDia">—</b>
+        <span class="muted" id="eResumen"></span>
+      </div>
+    </header>
+
+    <div class="lista" id="listaEx"></div>
+
+    <a class="btn ghost" id="btnAnadir" href="#">➕ Añadir ejercicio</a>
+
+    <div class="acciones">
+      <a class="btn" id="btnEntrenar" href="#">▶ Entrenar este día</a>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .e-head { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+  .volver { font-size: 1.4rem; padding: 6px 12px; border-radius: 12px; background: var(--card); border: 1px solid var(--border); }
+  .e-info { display: flex; flex-direction: column; }
+  .e-info b { font-size: 1.3rem; }
+  .e-info span { font-size: 0.82rem; }
+
+  .lista { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+
+  .lista :global(.ex-fila) {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px;
+    animation: rise 0.3s ease both;
+  }
+  .lista :global(.ex-fila.moviendo) { border-color: var(--accent); }
+  .lista :global(.ex-num) {
+    width: 22px; flex-shrink: 0; text-align: center;
+    font-size: 0.85rem; font-weight: 700; color: var(--text-dim);
+  }
+  .lista :global(.ex-fila img) {
+    width: 56px; height: 56px; flex-shrink: 0;
+    border-radius: 12px; background: #fff; object-fit: contain;
+  }
+  .lista :global(.ex-datos) { flex: 1; min-width: 0; }
+  .lista :global(.ex-datos b) {
+    display: block; font-size: 0.95rem; text-transform: capitalize;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .lista :global(.ex-datos .ex-meta) { font-size: 0.75rem; color: var(--text-dim); margin-top: 3px; }
+
+  .lista :global(.ex-btns) { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+  .lista :global(.ex-btns .fila-b) { display: flex; gap: 4px; }
+  .lista :global(.mini) {
+    width: 32px; height: 30px; border-radius: 9px;
+    background: var(--bg-soft); border: 1px solid var(--border);
+    color: var(--text-dim); font-size: 0.9rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s ease;
+  }
+  .lista :global(.mini:active) { transform: scale(0.9); }
+  .lista :global(.mini:disabled) { opacity: 0.25; }
+  .lista :global(.mini.cambiar) { border-color: var(--blue); color: var(--blue); }
+  .lista :global(.mini.quitar) { border-color: rgba(217, 45, 32, 0.4); color: #ff6b5e; }
+
+  .vacio { text-align: center; padding: 30px 10px; color: var(--text-dim); }
+
+  .acciones { margin-top: 24px; }
+</style>
+
+<script>
+  import { getProfile, getRoutineDay, saveRoutineDay, getSettings, DIAS } from '../lib/db.js';
+  import { mediaUrl, precargar } from '../lib/media.js';
+  import { navigate } from 'astro:transitions/client';
+
+  document.addEventListener('astro:page-load', () => {
+    const root = document.getElementById('editor');
+    if (!root) return;
+
+    const $ = (id) => root.querySelector('#' + id);
+    const dia = new URLSearchParams(location.search).get('dia');
+    const perfil = getProfile();
+    if (!perfil || !dia || !perfil.dias.includes(dia)) {
+      navigate('/rutinas', { history: 'replace' });
+      return;
+    }
+
+    const settings = getSettings();
+    let ejercicios = getRoutineDay(dia);
+
+    $('eDia').textContent = DIAS.find((d) => d.id === dia)?.label ?? dia;
+    $('btnEntrenar').href = `/entrenar?dia=${dia}`;
+    $('btnAnadir').href = `/buscar?dia=${dia}&pos=nueva`;
+
+    const guardar = () => {
+      saveRoutineDay(dia, ejercicios);
+      pintar();
+    };
+
+    function pintar() {
+      $('eResumen').textContent =
+        `${ejercicios.length} ejercicios · ~${ejercicios.length * settings.minPorEjercicio} min`;
+
+      const lista = $('listaEx');
+      if (ejercicios.length === 0) {
+        lista.innerHTML = '<p class="vacio">Este día no tiene ejercicios.<br />Añade uno para empezar.</p>';
+        return;
+      }
+
+      lista.innerHTML = ejercicios
+        .map(
+          (e, i) => `
+        <div class="ex-fila" style="animation-delay:${i * 0.03}s">
+          <span class="ex-num">${i + 1}</span>
+          <img src="${mediaUrl(e.image)}" alt="" loading="lazy" decoding="async" />
+          <div class="ex-datos">
+            <b>${e.name}</b>
+            <div class="ex-meta">${e.target} · ${e.equipment}</div>
+          </div>
+          <div class="ex-btns">
+            <div class="fila-b">
+              <button class="mini" data-accion="subir" data-i="${i}" ${i === 0 ? 'disabled' : ''} aria-label="Subir">↑</button>
+              <button class="mini" data-accion="bajar" data-i="${i}" ${i === ejercicios.length - 1 ? 'disabled' : ''} aria-label="Bajar">↓</button>
+            </div>
+            <div class="fila-b">
+              <button class="mini cambiar" data-accion="cambiar" data-i="${i}" aria-label="Cambiar ejercicio">🔄</button>
+              <button class="mini quitar" data-accion="quitar" data-i="${i}" aria-label="Quitar">🗑</button>
+            </div>
+          </div>
+        </div>`
+        )
+        .join('');
+
+      // Las miniaturas de este día quedan en caché para la próxima visita
+      precargar(ejercicios.map((e) => e.image));
+    }
+
+    $('listaEx').addEventListener('click', (ev) => {
+      const btn = ev.target.closest('.mini');
+      if (!btn) return;
+      const i = Number(btn.dataset.i);
+      const accion = btn.dataset.accion;
+
+      if (accion === 'subir' && i > 0) {
+        [ejercicios[i - 1], ejercicios[i]] = [ejercicios[i], ejercicios[i - 1]];
+        guardar();
+      } else if (accion === 'bajar' && i < ejercicios.length - 1) {
+        [ejercicios[i], ejercicios[i + 1]] = [ejercicios[i + 1], ejercicios[i]];
+        guardar();
+      } else if (accion === 'quitar') {
+        ejercicios.splice(i, 1);
+        guardar();
+      } else if (accion === 'cambiar') {
+        navigate(`/buscar?dia=${dia}&pos=${i}`);
+      }
+    });
+
+    pintar();
+  });
+</script>
