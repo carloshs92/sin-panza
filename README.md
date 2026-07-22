@@ -58,6 +58,27 @@ Astro, corre `pnpm run build` y publica `dist/`. No definas Root Directory.
 6. **Ajustes** (`/ajustes`): minutos/series/descanso, instalar la app,
    regenerar rutinas, borrar todo.
 
+## Funcionar sin internet
+
+- **Shell y datos**: el service worker precachea las páginas, el manifiesto, los
+  iconos y la tipografía. Las páginas van a red primero (para recibir cambios) y
+  caen a caché si no hay señal, con `ignoreSearch` para que
+  `/entrenar?dia=lunes` encuentre la página cacheada como `/entrenar`.
+- **Tipografía autoalojada**: Sora (SIL OFL) vive en `public/fonts/`. Antes venía
+  de Google Fonts y sin conexión la app perdía su tipografía.
+- **Descarga deliberada**: Ajustes → «Sin internet» baja las miniaturas y
+  animaciones de todas tus rutinas (6 en paralelo, con progreso) y te dice si ya
+  puedes entrenar sin señal.
+- **Aviso**: si el navegador reporta que no hay red aparece una franja ámbar.
+
+## Pantallas de arranque
+
+`scripts/generar-graficos.py` genera los iconos y los splash de iOS (PNG sin
+dependencias). iOS solo usa la imagen cuyo tamaño coincide exactamente con el
+dispositivo, así que hay una por resolución; el script imprime las etiquetas
+`<link>` listas para pegar en `Base.astro`. Android y escritorio usan el splash
+propio en HTML/CSS, que se desvanece solo (sin depender de JS).
+
 ## Caché del media
 
 Las ilustraciones nunca cambian, así que el service worker usa **dos cachés**:
