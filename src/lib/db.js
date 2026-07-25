@@ -4,6 +4,7 @@ const K = {
   settings: 'sp.settings',
   routines: 'sp.routines',
   history: 'sp.history',
+  sesion: 'sp.sesion', // entrenamiento en curso, para reanudar si se sale por error
 };
 
 const read = (key, fallback) => {
@@ -45,6 +46,12 @@ export const addHistory = (entry) => {
   h.unshift(entry);
   write(K.history, h.slice(0, 200));
 };
+
+// Entrenamiento en curso: se guarda mientras entrenas y se limpia al terminar
+// o salir. Permite reanudar donde ibas si sales por error o se recarga.
+export const getSesion = () => read(K.sesion, null);
+export const saveSesion = (s) => write(K.sesion, s);
+export const clearSesion = () => localStorage.removeItem(K.sesion);
 
 export const resetAll = () => Object.values(K).forEach((k) => localStorage.removeItem(k));
 
