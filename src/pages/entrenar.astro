@@ -4,7 +4,7 @@ import Base from '../layouts/Base.astro';
 <Base title="Entrenando">
   <div id="player">
     <header class="p-head">
-      <a href="/rutinas" class="volver" aria-label="Volver">←</a>
+      <a href="/rutinas" class="volver" id="btnVolver" aria-label="Volver">←</a>
       <div class="p-info">
         <b id="pDia">—</b>
         <span class="muted" id="pPos">Ejercicio 1 de 5</span>
@@ -61,6 +61,12 @@ import Base from '../layouts/Base.astro';
         </details>
       </div>
 
+      <!-- Estado: cuenta atrás previa -->
+      <div class="estado oculto" id="estCuenta">
+        <div class="cuenta-num" id="cuentaNum">3</div>
+        <p class="cuenta-msg">Prepárate…</p>
+      </div>
+
       <!-- Estado: trabajando / descanso -->
       <div class="estado oculto" id="estTimer">
         <div class="timer-wrap" id="timerWrap">
@@ -77,6 +83,28 @@ import Base from '../layouts/Base.astro';
         <button class="btn ghost small" id="btnSaltar">Saltar ejercicio →</button>
       </div>
     </section>
+
+    <!-- Alerta al intentar salir con el entrenamiento en curso -->
+    <div class="modal-fondo oculto" id="modalSalir">
+      <div class="modal">
+        <div class="modal-emoji">🏃</div>
+        <h2>¿Salir del entrenamiento?</h2>
+        <p class="muted">Perderás el progreso de esta sesión. Tendrás que empezar de nuevo.</p>
+        <button class="btn peligro-btn" id="btnSalirSi">Sí, salir</button>
+        <button class="btn ghost" id="btnSalirNo">Seguir entrenando</button>
+      </div>
+    </div>
+
+    <!-- Reanudar un entrenamiento que quedó a medias -->
+    <div class="modal-fondo oculto" id="modalReanudar">
+      <div class="modal">
+        <div class="modal-emoji">⏳</div>
+        <h2>Tienes un entrenamiento a medias</h2>
+        <p class="muted" id="reanudarInfo">—</p>
+        <button class="btn" id="btnReanudarSi">▶ Continuar donde iba</button>
+        <button class="btn ghost" id="btnReanudarNo">Empezar de nuevo</button>
+      </div>
+    </div>
 
     <!-- Vista final -->
     <section id="vistaFin" class="vista oculto">
@@ -151,6 +179,36 @@ import Base from '../layouts/Base.astro';
   .btn-leer.leyendo { border-color: var(--blue); color: var(--blue); }
   .pasos ol { margin: 12px 0 0 20px; display: flex; flex-direction: column; gap: 8px; color: var(--text-dim); font-size: 0.92rem; line-height: 1.5; }
 
+  #estCuenta { padding: 40px 0; gap: 6px; }
+  .cuenta-num {
+    font-size: 8.5rem; font-weight: 800; line-height: 1;
+    color: var(--accent); font-variant-numeric: tabular-nums;
+  }
+  .cuenta-num.pop { animation: cuenta-pop 0.55s ease; }
+  .cuenta-msg { font-size: 1rem; color: var(--text-dim); letter-spacing: 0.14em; text-transform: uppercase; }
+  @keyframes cuenta-pop {
+    from { transform: scale(1.6); opacity: 0.2; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .modal-fondo {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(5, 6, 10, 0.75); backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center; padding: 24px;
+    animation: rise 0.2s ease both;
+  }
+  .modal {
+    width: 100%; max-width: 380px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 22px; padding: 26px;
+    display: flex; flex-direction: column; gap: 14px; text-align: center;
+    animation: rise 0.25s ease both;
+  }
+  .modal-emoji { font-size: 2.6rem; }
+  .modal h2 { font-size: 1.2rem; }
+  .modal p { font-size: 0.92rem; line-height: 1.5; }
+  .peligro-btn { background: #d92d20; box-shadow: 0 8px 24px rgba(217, 45, 32, 0.35); }
+
   .timer-wrap { position: relative; width: min(78vw, 320px); aspect-ratio: 1; cursor: pointer; }
   .timer-svg { width: 100%; height: 100%; transform: rotate(-90deg); }
   .t-bg { fill: none; stroke: var(--card); stroke-width: 10; }
@@ -176,8 +234,11 @@ import Base from '../layouts/Base.astro';
 </style>
 
 <script>
-  import { getProfile, getRoutines, getSettings, saveSettings, addHistory, getHistory, calcularRacha, DIAS } from '../lib/db.js';
-  import { initAudio, sonidoTick, sonidoGo, sonidoSerie, sonidoEjercicio, sonidoFin } from '../lib/audio.js';
+  import { getProfile, getRoutines, getSettings, saveSettings, addHistory, getHistory, calcularRacha, getSesion, saveSesion, clearSesion, DIAS } from '../lib/db.js';
+  import {
+    initAudio, sonidoTap, sonidoCuenta, sonidoInicio, sonidoUltimos,
+    sonidoTick, sonidoFinSerie, sonidoSerie, sonidoEjercicio, sonidoFin,
+  } from '../lib/audio.js';
   import { soportaVoz, crearEscucha, vozDe } from '../lib/voice.js';
   import { soportaTTS, leer, callar } from '../lib/tts.js';
   import { mediaUrl, precargar } from '../lib/media.js';
@@ -209,12 +270,13 @@ import Base from '../layouts/Base.astro';
     const st = {
       idx: 0,
       serie: 0,           // series completadas del ejercicio actual
-      fase: 'espera',     // espera | trabajo | descanso | fin
+      fase: 'espera',     // espera | cuenta | trabajo | descanso | fin
       restante: 0,
       total: 0,
       pausado: false,
       timerId: null,
       inicio: Date.now(),
+      sesionActiva: false, // true desde el primer arranque hasta terminar/salir
       minPorEjercicio: settings.minPorEjercicio,
       series: settings.series,
       descanso: settings.descansoSeg,
@@ -227,7 +289,8 @@ import Base from '../layouts/Base.astro';
     const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
     // ---------- render ----------
-    function renderEjercicio() {
+    // Pinta el ejercicio actual SIN tocar la fase (para poder reanudar en pleno timer)
+    function pintarEjercicioActual() {
       const ex = rutina[st.idx];
       $('pDia').textContent = DIAS.find((d) => d.id === dia)?.label ?? dia;
       $('pPos').textContent = `Ejercicio ${st.idx + 1} de ${rutina.length}`;
@@ -241,10 +304,25 @@ import Base from '../layouts/Base.astro';
       $('cfgMin').textContent = String(st.minPorEjercicio);
       $('cfgSer').textContent = String(st.series);
       renderDots();
-      mostrarEstado('espera');
       // El GIF del siguiente ejercicio se descarga mientras haces este
       const sig = rutina[st.idx + 1];
       if (sig) precargar([sig.gif]);
+    }
+
+    function renderEjercicio() {
+      pintarEjercicioActual();
+      mostrarEstado('espera');
+    }
+
+    // Guarda el progreso para reanudar si se sale por error o se recarga
+    function persistir() {
+      if (!st.sesionActiva || st.fase === 'fin') return;
+      saveSesion({
+        dia, idx: st.idx, serie: st.serie, fase: st.fase,
+        restante: st.restante, total: st.total, pausado: st.pausado,
+        minPorEjercicio: st.minPorEjercicio, series: st.series, descanso: st.descanso,
+        inicio: st.inicio, ts: Date.now(),
+      });
     }
 
     function renderDots() {
@@ -257,7 +335,8 @@ import Base from '../layouts/Base.astro';
     function mostrarEstado(fase) {
       st.fase = fase;
       $('estEspera').classList.toggle('oculto', fase !== 'espera');
-      $('estTimer').classList.toggle('oculto', fase === 'espera');
+      $('estCuenta').classList.toggle('oculto', fase !== 'cuenta');
+      $('estTimer').classList.toggle('oculto', fase !== 'trabajo' && fase !== 'descanso');
       if (fase === 'espera') {
         const puedeVoz = soportaVoz();
         $('btnMic').classList.toggle('oculto', !puedeVoz || !!escucha);
@@ -279,8 +358,9 @@ import Base from '../layouts/Base.astro';
     function tick() {
       if (st.pausado) return;
       st.restante--;
-      // Ticks sonoros en la cuenta regresiva del descanso
+      // Ticks sonoros en el descanso y aviso en los últimos 5 s de trabajo
       if (st.fase === 'descanso' && st.restante > 0) sonidoTick();
+      if (st.fase === 'trabajo' && st.restante > 0 && st.restante <= 5) sonidoUltimos();
       if (st.restante <= 0) {
         clearInterval(st.timerId);
         alTerminarFase();
@@ -297,15 +377,16 @@ import Base from '../layouts/Base.astro';
       $('timerWrap').classList.toggle('pausado', st.pausado);
       $('tHint').textContent = st.pausado ? 'pausado · toca para seguir' : 'toca para pausar';
       renderDots();
+      persistir();
     }
 
     function alTerminarFase() {
       if (st.fase === 'trabajo') {
         st.serie++;
         if (st.serie >= st.series) {
-          siguienteEjercicio();
+          siguienteEjercicio(); // suena el cambio de ejercicio (o el fin)
         } else {
-          // Lapso de 5 s con sonido antes de la siguiente serie
+          sonidoFinSerie();
           arrancarCuenta(st.descanso, 'descanso');
         }
       } else if (st.fase === 'descanso') {
@@ -318,11 +399,47 @@ import Base from '../layouts/Base.astro';
       if (st.fase !== 'espera') return;
       resetLectura();
       initAudio();
-      sonidoGo();
+      if (!st.sesionActiva) {
+        st.sesionActiva = true;
+        ponerGuardia(); // avisar antes de perder el progreso al retroceder
+      }
+      pedirWakeLock();
+      cuentaPrevia();
+    }
+
+    // Cuenta atrás 3-2-1 antes de arrancar la primera serie del ejercicio
+    function cuentaPrevia() {
       st.serie = 0;
+      mostrarEstado('cuenta');
+      persistir();
+      let n = 3;
+      pintarCuenta(n);
+      sonidoCuenta();
+      clearInterval(st.timerId);
+      st.timerId = setInterval(() => {
+        n--;
+        if (n <= 0) {
+          clearInterval(st.timerId);
+          comenzarTrabajo();
+          return;
+        }
+        pintarCuenta(n);
+        sonidoCuenta();
+      }, 1000);
+    }
+
+    function pintarCuenta(n) {
+      const el = $('cuentaNum');
+      el.textContent = String(n);
+      el.classList.remove('pop');
+      void el.offsetWidth; // reinicia la animación de rebote
+      el.classList.add('pop');
+    }
+
+    function comenzarTrabajo() {
+      sonidoInicio();
       mostrarEstado('trabajo');
       arrancarCuenta(segundosPorSerie(), 'trabajo');
-      pedirWakeLock();
     }
 
     function siguienteEjercicio() {
@@ -337,12 +454,16 @@ import Base from '../layouts/Base.astro';
       st.serie = 0;
       // El siguiente ejercicio siempre espera el comando de voz «ahora»
       renderEjercicio();
+      persistir();
       document.startViewTransition?.(() => {});
     }
 
     function terminar() {
       sonidoFin();
       st.fase = 'fin';
+      st.sesionActiva = false;
+      clearSesion();
+      quitarGuardia();
       escucha?.stop();
       wakeLock?.release?.();
       const min = Math.max(1, Math.round((Date.now() - st.inicio) / 60000));
@@ -358,6 +479,118 @@ import Base from '../layouts/Base.astro';
 
     async function pedirWakeLock() {
       try { wakeLock = await navigator.wakeLock?.request('screen'); } catch { /* opcional */ }
+    }
+
+    // ---------- protección al salir (para no perder el progreso) ----------
+    // El retroceso del navegador lo intercepta el router de Astro antes que
+    // nosotros, así que no se puede cancelar de forma fiable. La red de
+    // seguridad real es persistir el progreso (persistir/reanudar): aunque se
+    // salga por error, al volver se ofrece continuar. Aquí solo cubrimos el
+    // botón «volver» (modal) y la recarga/cierre de pestaña (diálogo nativo).
+    let guardiaPuesta = false;
+
+    // Hay progreso que perder desde que arrancas hasta terminar el entrenamiento
+    const enCurso = () => st.sesionActiva && st.fase !== 'fin';
+
+    function ponerGuardia() {
+      if (guardiaPuesta) return;
+      guardiaPuesta = true;
+      addEventListener('beforeunload', alBeforeUnload);
+    }
+
+    function quitarGuardia() {
+      guardiaPuesta = false;
+      removeEventListener('beforeunload', alBeforeUnload);
+    }
+
+    function alBeforeUnload(e) {
+      if (!enCurso()) return;
+      e.preventDefault();
+      e.returnValue = ''; // navegadores muestran su diálogo nativo de «¿salir?»
+    }
+
+    let salirTrasConfirmar = null;
+    let pausaPrevia = false;
+
+    function pedirConfirmarSalida(alConfirmar) {
+      salirTrasConfirmar = alConfirmar;
+      pausaPrevia = st.pausado;
+      st.pausado = true; // congela el tiempo mientras decide
+      if (st.fase === 'trabajo' || st.fase === 'descanso') pintarTimer();
+      $('modalSalir').classList.remove('oculto');
+    }
+
+    function cerrarModalSalir() {
+      $('modalSalir').classList.add('oculto');
+      salirTrasConfirmar = null;
+      st.pausado = pausaPrevia;
+      if (st.fase === 'trabajo' || st.fase === 'descanso') pintarTimer();
+    }
+
+    function salirDeVerdad() {
+      clearInterval(st.timerId);
+      st.sesionActiva = false;
+      st.fase = 'fin';
+      clearSesion();
+      quitarGuardia();
+      callar();
+      escucha?.stop();
+      wakeLock?.release?.();
+      navigate('/rutinas');
+    }
+
+    // ---------- reanudar sesión a medias ----------
+    function reanudarTimer() {
+      mostrarEstado(st.fase); // 'trabajo' o 'descanso'
+      clearInterval(st.timerId);
+      pintarTimer();
+      st.timerId = setInterval(tick, 1000);
+    }
+
+    // Restaura una sesión guardada. Devuelve true si había algo que reanudar.
+    function intentarReanudar() {
+      const s = getSesion();
+      // Solo del mismo día, activa y reciente (menos de 3 h)
+      if (!s || s.dia !== dia || s.fase === 'fin') return false;
+      if (Date.now() - (s.ts || 0) > 3 * 60 * 60 * 1000) { clearSesion(); return false; }
+      if (s.idx == null || s.idx >= rutina.length) { clearSesion(); return false; }
+
+      const label = DIAS.find((d) => d.id === dia)?.label ?? dia;
+      $('reanudarInfo').textContent =
+        `${label} · ejercicio ${s.idx + 1} de ${rutina.length}` +
+        (s.fase === 'descanso' ? ' · en descanso' : s.fase === 'trabajo' ? ` · serie ${s.serie + 1}` : '');
+
+      const continuar = () => {
+        Object.assign(st, {
+          idx: s.idx, serie: s.serie, minPorEjercicio: s.minPorEjercicio,
+          series: s.series, descanso: s.descanso, inicio: s.inicio || Date.now(),
+          restante: s.restante, total: s.total, pausado: true, sesionActiva: true,
+        });
+        initAudio();
+        ponerGuardia();
+        pedirWakeLock();
+        pintarEjercicioActual();
+        if (s.fase === 'trabajo' || s.fase === 'descanso') {
+          st.fase = s.fase;
+          reanudarTimer(); // arranca en pausa: se reanuda al tocar
+        } else {
+          mostrarEstado('espera'); // 'cuenta' o 'espera' → vuelve a esperar el arranque
+        }
+      };
+
+      $('btnReanudarSi').addEventListener('click', () => {
+        sonidoTap();
+        $('modalReanudar').classList.add('oculto');
+        continuar();
+      }, { once: true });
+      $('btnReanudarNo').addEventListener('click', () => {
+        sonidoTap();
+        clearSesion();
+        $('modalReanudar').classList.add('oculto');
+      }, { once: true });
+
+      $('modalReanudar').classList.remove('oculto');
+      return true;
     }
 
     // ---------- lectura de instrucciones (TTS) ----------
@@ -414,21 +647,41 @@ import Base from '../layouts/Base.astro';
     }
 
     // ---------- eventos ----------
-    $('btnMic').addEventListener('click', activarMic);
+    $('btnMic').addEventListener('click', () => { initAudio(); sonidoTap(); activarMic(); });
     $('btnManual').addEventListener('click', empezarEjercicio);
-    $('btnSaltar').addEventListener('click', siguienteEjercicio);
+    $('btnSaltar').addEventListener('click', () => { sonidoTap(); siguienteEjercicio(); });
     $('timerWrap').addEventListener('click', () => {
       if (st.fase === 'trabajo' || st.fase === 'descanso') {
         st.pausado = !st.pausado;
+        sonidoTap();
         pintarTimer();
       }
     });
+
+    // Botón «volver»: si hay entrenamiento en curso, pregunta antes de salir
+    $('btnVolver').addEventListener('click', (e) => {
+      if (enCurso()) {
+        e.preventDefault();
+        sonidoTap();
+        pedirConfirmarSalida(() => salirDeVerdad());
+      }
+    });
+
+    // Botones del modal de salida
+    $('btnSalirSi').addEventListener('click', () => {
+      const salir = salirTrasConfirmar;
+      $('modalSalir').classList.add('oculto');
+      salirTrasConfirmar = null;
+      salir?.();
+    });
+    $('btnSalirNo').addEventListener('click', () => { sonidoTap(); cerrarModalSalir(); });
 
     root.querySelectorAll('.stepper button').forEach((b) =>
       b.addEventListener('click', () => {
         const d = Number(b.dataset.d);
         if (b.dataset.cfg === 'min') st.minPorEjercicio = Math.min(10, Math.max(1, st.minPorEjercicio + d));
         else st.series = Math.min(8, Math.max(1, st.series + d));
+        sonidoTap();
         $('cfgMin').textContent = String(st.minPorEjercicio);
         $('cfgSer').textContent = String(st.series);
         saveSettings({ ...getSettings(), minPorEjercicio: st.minPorEjercicio, series: st.series });
@@ -442,8 +695,10 @@ import Base from '../layouts/Base.astro';
       callar();
       escucha?.stop();
       wakeLock?.release?.();
+      quitarGuardia();
     }, { once: true });
 
     renderEjercicio();
+    intentarReanudar(); // si quedó un entrenamiento a medias, ofrece continuarlo
   });
 </script>

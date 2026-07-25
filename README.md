@@ -50,8 +50,14 @@ Astro, corre `pnpm run build` y publica `dist/`. No definas Root Directory.
      mismo y en Ajustes.
    - El ejercicio **solo empieza cuando dices «ahora»** (o «inicio», «vamos»…)
      con el micrófono activado — hay botón de respaldo si no hay voz.
-   - Entre series hay un descanso de **5 s con ticks sonoros**; otro sonido marca
-     la siguiente serie y una campanilla el cambio de ejercicio.
+   - Al arrancar hay una **cuenta atrás 3-2-1**. Sonidos en todo el ciclo:
+     cuenta previa, inicio de serie, aviso en los últimos 5 s de trabajo, fin de
+     serie, ticks del descanso, cambio de ejercicio y fin; y un clic en cada
+     interacción (pausar, saltar, ajustar).
+   - **No se pierde el progreso**: la sesión se guarda en curso (`sp.sesion`). Si
+     sales por error o recargas, al volver te ofrece **continuar donde ibas**.
+     Además el botón «volver» pregunta antes de salir y recargar/cerrar muestra
+     el diálogo nativo del navegador.
 4. **Editar** (`/editar?dia=lunes`): reordena los ejercicios del día, cámbialos o
    quítalos. Cada cambio se guarda al instante.
 5. **Buscar** (`/buscar?dia=lunes&pos=2`): catálogo completo con búsqueda por
