@@ -48,3 +48,15 @@ export function toast(texto, { icono: nombre = 'check', ms = 1600 } = {}) {
 
 // Marca un chip como elegido (o no) accesiblemente
 export const marcarChip = (el, on) => el.setAttribute('aria-pressed', on ? 'true' : 'false');
+
+// Conecta un <Sheet>: se cierra con su botón ✕, tocando el fondo o con Escape
+// (este último lo da <dialog>). Devuelve abrir/cerrar.
+export function conectarSheet(el) {
+  el.addEventListener('click', (ev) => {
+    if (ev.target === el || ev.target.closest('[data-cerrar]')) el.close();
+  });
+  return {
+    abrir: () => { if (!el.open) el.showModal(); },
+    cerrar: () => { if (el.open) el.close(); },
+  };
+}

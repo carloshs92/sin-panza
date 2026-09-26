@@ -1,0 +1,20 @@
+---
+// Panel que sube desde abajo, sobre <dialog> nativo. Comportamiento:
+// conectarSheet() de lib/ui.js.
+import Icon from './Icon.astro';
+
+interface Props {
+  id: string;
+  titulo: string;
+}
+const { id, titulo } = Astro.props;
+---
+<dialog class="sheet" id={id} aria-labelledby={`${id}-titulo`}>
+  <div class="sheet-cuerpo">
+    <header class="sheet-cab">
+      <h2 id={`${id}-titulo`}>{titulo}</h2>
+      <button type="button" class="icon-btn" data-cerrar aria-label="Cerrar"><Icon nombre="x" /></button>
+    </header>
+    <slot />
+  </div>
+</dialog>

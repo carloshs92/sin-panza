@@ -76,20 +76,24 @@ Estado: `[ ]` pendiente · `[~]` en curso · `[x]` hecho
   - Diálogos con icono en círculo (tono neutro o peligro); toast con check.
   - Portada del onboarding con la mancuerna de la marca; cargando con spinner.
 
-- [ ] **0.5 · Rediseño de Entrenar** · M · _depende de 0.3_
-  Hoy, a 375×667, el botón «Empezar» queda bajo el pliegue.
-  - Barra de acción fija abajo (Empezar + micrófono) respetando safe areas.
-  - GIF con `aspect-ratio` y `max-height: 34svh`, en marco neutro (no blanco
-    puro sobre fondo oscuro).
-  - Minutos/series y «Cómo se hace» pasan a `Sheet` (con steppers de 44 px
-    ya no caben lado a lado en la tarjeta actual).
-  - Timer con `min(70vmin, 420px)` y cifras de tamaño display (adelanta el
-    modo «teléfono lejos»).
-  - Horizontal: GIF a la izquierda, timer a la derecha. Quitar
-    `orientation: portrait` del manifiesto.
-  - `aria-live` en los cambios de fase.
-  - ✅ *Listo cuando*: todo lo esencial cabe sin scroll en 375×667 y en
-    horizontal se ve el timer desde dos metros.
+- [x] **0.5 · Rediseño de Entrenar** · M · _depende de 0.3_
+  - Pantalla a alto exacto (`svh`): sin scroll en 320×568, 375×667 y en
+    horizontal (568×320 a 844×390).
+  - Barra de acción pegada abajo con safe area. En espera: «Cómo se hace»,
+    «Ajustar», **Empezar** y micrófono; con el tiempo corriendo: Pausar/Seguir
+    y Saltar.
+  - El micrófono es un interruptor (antes solo se podía encender); su estado
+    se ve en el botón y en la línea de ayuda. Fuera el círculo de 88 px.
+  - Minutos/series y los pasos en paneles inferiores (`Sheet` sobre
+    `<dialog>`: ✕, fondo y Escape).
+  - La ilustración se encoge mientras corre el tiempo; crédito dentro del marco.
+  - Timer: `min(70vmin, 420px, 42svh)` en vertical; en horizontal se mide
+    contra el hueco real (container query de tamaño) y se ocultan cabecera y
+    título para darle el alto.
+  - `orientation: any` en el manifiesto.
+  - Región `aria-live` que anuncia series, descansos, ejercicio siguiente y
+    final (no cada segundo).
+  - Las pantallas sin barra de navegación ya no reservan 96 px abajo.
 
 - [ ] **0.6 · Layouts responsive** · M · _depende de 0.3_
   Mobile-first; container queries en componentes, media queries solo para el
@@ -270,4 +274,4 @@ subir una serie no necesita un modelo de lenguaje, necesita recordar cómo te fu
 3. Un commit por ítem, marcando aquí la casilla en el mismo commit.
 4. Si algo se descubre por el camino, se añade al roadmap en vez de improvisar.
 
-**Siguiente**: 0.5 — rediseño de Entrenar.
+**Siguiente**: 0.6 — layouts responsive.

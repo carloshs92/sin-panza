@@ -74,7 +74,7 @@ const { title, nav = null } = Astro.props;
       <b>Sin<i>Panza</i></b>
     </div>
     <div id="sinRed" class="sin-red oculto" role="status"><Icon nombre="wifi-off" /> Sin conexión — usando lo que tienes guardado</div>
-    <main class="shell">
+    <main class:list={['shell', { 'sin-nav': !nav }]}>
       <slot />
     </main>
     {nav && (

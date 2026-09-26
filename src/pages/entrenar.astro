@@ -2,85 +2,66 @@
 import Base from '../layouts/Base.astro';
 import TopBar from '../components/TopBar.astro';
 import Dialog from '../components/Dialog.astro';
+import Sheet from '../components/Sheet.astro';
 import Stepper from '../components/Stepper.astro';
 import Icon from '../components/Icon.astro';
 ---
 <Base title="Entrenando">
-  <div id="player" class="stack">
+  <!-- data-fase (espera | cuenta | trabajo | descanso | fin) decide qué se ve -->
+  <div id="player" data-fase="espera">
     <div class="cabecera">
-      <TopBar volver="/rutinas" volverId="btnVolver" tituloId="pDia" subId="pPos">
-        <span class="mic-dot" id="micDot" title="Micrófono" aria-hidden="true"><Icon nombre="mic" /></span>
-      </TopBar>
+      <TopBar volver="/rutinas" volverId="btnVolver" tituloId="pDia" subId="pPos" />
       <div class="progress"><div id="pBarra"></div></div>
     </div>
 
     <!-- Vista de ejercicio -->
-    <section id="vistaEjercicio" class="vista">
+    <section id="vistaEjercicio" class="escena">
       <figure class="media">
-        <div class="media-frame" id="mediaBox">
+        <div class="media-frame">
           <img id="exGif" src="" alt="Demostración del ejercicio" />
+          <figcaption class="credito">© <a href="https://gymvisual.com/" target="_blank" rel="noopener">Gym visual</a></figcaption>
         </div>
-        <figcaption class="credito">© Gym visual — <a href="https://gymvisual.com/" target="_blank" rel="noopener">gymvisual.com</a></figcaption>
       </figure>
 
-      <div class="ex-titulo">
-        <h2 id="exNombre">—</h2>
-        <div class="ex-tags" id="exTags"></div>
-      </div>
-
-      <div class="series-dots" id="seriesDots" aria-hidden="true"></div>
-
-      <!-- Estado: esperando voz -->
-      <div class="estado" id="estEspera">
-        <div class="voz-circulo" id="vozCirculo" aria-hidden="true"><Icon nombre="mic" clase="icon-lg" /></div>
-        <p class="voz-msg">Di <b id="vozPalabra">«¡ahora!»</b> para empezar</p>
-        <p class="muted voz-estado" id="vozEstado" aria-live="polite">Activa el micrófono para el control por voz</p>
-        <button class="btn btn-secondary btn-sm" id="btnMic"><Icon nombre="mic" /> Activar micrófono</button>
-        <button class="btn" id="btnManual"><Icon nombre="play" /> Empezar ahora</button>
-
-        <div class="config-inline card">
-          <div class="cfg">
-            <span class="con-icono"><Icon nombre="timer" />Minutos</span>
-            <Stepper id="stMin" etiqueta="Minutos" />
-          </div>
-          <div class="cfg">
-            <span class="con-icono"><Icon nombre="repeat" />Series</span>
-            <Stepper id="stSer" etiqueta="Series" />
-          </div>
+      <div class="info">
+        <div class="ex-titulo">
+          <h2 id="exNombre">—</h2>
+          <div class="ex-tags" id="exTags"></div>
         </div>
 
-        <details class="pasos card" open>
-          <summary><span class="con-icono"><Icon nombre="book" />Cómo se hace</span></summary>
-          <button class="btn btn-secondary btn-sm btn-leer" id="btnLeer"><Icon nombre="volume" /> Escuchar instrucciones</button>
-          <ol id="exPasos"></ol>
-        </details>
-      </div>
+        <div class="series-dots" id="seriesDots" aria-hidden="true"></div>
 
-      <!-- Estado: cuenta atrás previa -->
-      <div class="estado oculto" id="estCuenta">
-        <div class="cuenta-num" id="cuentaNum" aria-live="assertive">3</div>
-        <p class="cuenta-msg">Prepárate…</p>
-      </div>
+        <!-- Estado: esperando el arranque -->
+        <div class="estado" id="estEspera">
+          <p class="voz-msg" id="vozMsg">Toca <b>Empezar</b> cuando estés en posición</p>
+          <p class="muted voz-estado" id="vozEstado"></p>
+        </div>
 
-      <!-- Estado: trabajando / descanso -->
-      <div class="estado oculto" id="estTimer">
-        <button class="timer-wrap" id="timerWrap" aria-label="Pausar o seguir">
-          <svg viewBox="0 0 200 200" class="timer-svg" aria-hidden="true">
-            <circle cx="100" cy="100" r="88" class="t-bg" />
-            <circle cx="100" cy="100" r="88" class="t-fg" id="tArco" />
-          </svg>
-          <span class="timer-centro">
-            <span class="t-fase" id="tFase">SERIE 1</span>
-            <b class="t-num" id="tNum">0:45</b>
-            <span class="muted t-hint" id="tHint">toca para pausar</span>
-          </span>
-        </button>
-        <button class="btn btn-ghost btn-sm" id="btnSaltar">Saltar ejercicio <Icon nombre="skip-forward" /></button>
+        <!-- Estado: cuenta atrás previa -->
+        <div class="estado oculto" id="estCuenta">
+          <div class="cuenta-num" id="cuentaNum">3</div>
+          <p class="cuenta-msg">Prepárate…</p>
+        </div>
+
+        <!-- Estado: trabajando / descanso -->
+        <div class="estado oculto" id="estTimer">
+          <button class="timer-wrap" id="timerWrap" aria-label="Pausar o seguir">
+            <svg viewBox="0 0 200 200" class="timer-svg" aria-hidden="true">
+              <circle cx="100" cy="100" r="88" class="t-bg" />
+              <circle cx="100" cy="100" r="88" class="t-fg" id="tArco" />
+            </svg>
+            <span class="timer-centro">
+              <span class="t-fase" id="tFase">SERIE 1</span>
+              <b class="t-num" id="tNum">0:45</b>
+              <span class="t-hint" id="tHint"></span>
+            </span>
+          </button>
+        </div>
       </div>
     </section>
 
     <!-- Vista final -->
-    <section id="vistaFin" class="vista oculto">
+    <section id="vistaFin" class="oculto">
       <div class="fin">
         <div class="fin-emoji" aria-hidden="true">🏆</div>
         <h2>¡Entrenamiento completado!</h2>
@@ -88,6 +69,40 @@ import Icon from '../components/Icon.astro';
         <a href="/rutinas" class="btn">Volver a mis rutinas</a>
       </div>
     </section>
+
+    <!-- Barra de acción: siempre a mano, pegada abajo -->
+    <div class="barra-accion">
+      <div class="barra-fila" id="barEspera">
+        <button class="icon-btn" id="btnPasos" aria-label="Cómo se hace"><Icon nombre="book" /></button>
+        <button class="icon-btn" id="btnAjustar" aria-label="Ajustar minutos y series"><Icon nombre="sliders" /></button>
+        <button class="btn" id="btnManual"><Icon nombre="play" /> Empezar</button>
+        <button class="icon-btn mic" id="btnMic" aria-pressed="false" aria-label="Control por voz"><Icon nombre="mic-off" /></button>
+      </div>
+      <div class="barra-fila" id="barTimer">
+        <button class="btn btn-secondary" id="btnPausa"><Icon nombre="pause" /> Pausar</button>
+        <button class="btn btn-ghost btn-sm" id="btnSaltar">Saltar <Icon nombre="skip-forward" /></button>
+      </div>
+    </div>
+
+    <!-- Anuncios para lectores de pantalla: cambios de fase, no cada segundo -->
+    <p class="visually-hidden" id="anuncio" aria-live="polite"></p>
+
+    <Sheet id="sheetAjustes" titulo="Ajustar ejercicio">
+      <div class="cfg">
+        <span class="con-icono"><Icon nombre="timer" />Minutos por ejercicio</span>
+        <Stepper id="stMin" etiqueta="Minutos" />
+      </div>
+      <div class="cfg">
+        <span class="con-icono"><Icon nombre="repeat" />Series</span>
+        <Stepper id="stSer" etiqueta="Series" />
+      </div>
+      <p class="muted nota">Se guarda también para los próximos entrenamientos.</p>
+    </Sheet>
+
+    <Sheet id="sheetPasos" titulo="Cómo se hace">
+      <button class="btn btn-secondary btn-sm btn-leer" id="btnLeer"><Icon nombre="volume" /> Escuchar instrucciones</button>
+      <ol class="pasos" id="exPasos"></ol>
+    </Sheet>
 
     <!-- Alerta al intentar salir con el entrenamiento en curso -->
     <Dialog id="modalSalir" icono="log-out" tono="peligro" titulo="¿Salir del entrenamiento?">
@@ -106,21 +121,41 @@ import Icon from '../components/Icon.astro';
 </Base>
 
 <style>
+  /* La pantalla ocupa exactamente el alto visible: todo lo esencial sin scroll
+     y la barra de acción siempre abajo. */
+  #player {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+    min-height: calc(100svh - var(--shell-top) - var(--shell-bottom));
+  }
   .cabecera { display: flex; flex-direction: column; gap: var(--s-3); }
-  .mic-dot { display: flex; font-size: var(--t-lg); color: var(--fg-subtle); transition: color var(--dur-2); }
-  .mic-dot.on { color: var(--success); }
 
-  .vista { display: flex; flex-direction: column; gap: var(--s-4); }
+  .escena { flex: 1; display: flex; flex-direction: column; gap: var(--s-3); }
+  .info { flex: 1; display: flex; flex-direction: column; gap: var(--s-3); }
 
-  .media { display: flex; flex-direction: column; gap: var(--s-1); }
-  .media .media-frame { display: flex; justify-content: center; border-radius: var(--r-lg); }
-  .media img { max-height: 300px; }
-  .credito { font-size: var(--t-xs); color: var(--fg-subtle); text-align: right; }
+  /* ---- ilustración ---- */
+  .media .media-frame {
+    position: relative;
+    display: flex; justify-content: center;
+    height: clamp(140px, 34svh, 340px);
+    border-radius: var(--r-lg);
+    transition: height var(--dur-3) var(--ease-out);
+  }
+  .media img { width: auto; max-width: 100%; }
+  /* Mientras corre el tiempo manda el timer: la ilustración se encoge */
+  #player:is([data-fase='cuenta'], [data-fase='trabajo'], [data-fase='descanso']) .media .media-frame { height: clamp(110px, 22svh, 240px); }
+  .credito {
+    position: absolute; right: var(--s-2); bottom: var(--s-1);
+    font-size: var(--t-xs); color: var(--surface-3);
+  }
   .credito a { text-decoration: underline; }
 
+  /* ---- ejercicio ---- */
   .ex-titulo { display: flex; flex-direction: column; gap: var(--s-2); }
   .ex-titulo h2 { font-size: var(--t-xl); text-transform: capitalize; }
   .ex-tags { display: flex; flex-wrap: wrap; gap: var(--s-1); }
+  #player:not([data-fase='espera']) .ex-tags { display: none; }
 
   .series-dots { display: flex; justify-content: center; gap: var(--s-2); }
   .series-dots :global(span) {
@@ -131,29 +166,15 @@ import Icon from '../components/Icon.astro';
   .series-dots :global(span.hecha) { background: var(--success); box-shadow: none; }
   .series-dots :global(span.actual) { background: var(--accent); box-shadow: none; transform: scale(1.3); }
 
-  .estado { display: flex; flex-direction: column; align-items: center; gap: var(--s-3); }
+  .estado { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s-2); text-align: center; }
 
-  .voz-circulo {
-    display: flex; align-items: center; justify-content: center;
-    width: 88px; height: 88px; border-radius: var(--r-full);
-    background: var(--surface-2); box-shadow: inset 0 0 0 2px var(--line-strong);
-    font-size: var(--t-md);
-    color: var(--fg-muted);
-  }
-  .voz-circulo.escuchando { box-shadow: inset 0 0 0 2px var(--success); color: var(--success); animation: pulso 1.6s ease-out infinite; }
   .voz-msg { font-size: var(--t-lg); }
-  .voz-estado { font-size: var(--t-sm); text-align: center; }
+  .voz-msg :global(b) { color: var(--fg); }
+  .voz-msg.escuchando { color: var(--success); }
+  .voz-estado { font-size: var(--t-sm); }
+  .voz-estado:empty { display: none; }
 
-  .config-inline { display: flex; flex-wrap: wrap; justify-content: space-around; gap: var(--s-3); width: 100%; }
-  .cfg { display: flex; flex-direction: column; align-items: center; gap: var(--s-2); font-size: var(--t-sm); color: var(--fg-muted); }
-
-  .pasos { width: 100%; }
-  .pasos summary { min-height: var(--tap); display: flex; align-items: center; cursor: pointer; font-weight: 600; color: var(--fg-muted); }
-  .btn-leer { margin-top: var(--s-2); }
-  .btn-leer.leyendo { color: var(--focus); box-shadow: inset 0 0 0 1px var(--focus); }
-  .pasos ol { display: flex; flex-direction: column; gap: var(--s-2); margin: var(--s-3) 0 0 var(--s-5); font-size: var(--t-sm); color: var(--fg-muted); }
-
-  #estCuenta { gap: var(--s-1); padding: var(--s-6) 0; }
+  /* ---- cuenta atrás ---- */
   .cuenta-num { font-size: var(--t-display); font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; color: var(--accent); }
   .cuenta-num.pop { animation: cuenta-pop 0.55s var(--ease-out); }
   .cuenta-msg { font-size: var(--t-sm); letter-spacing: 0.14em; text-transform: uppercase; color: var(--fg-muted); }
@@ -162,8 +183,14 @@ import Icon from '../components/Icon.astro';
     to { transform: scale(1); opacity: 1; }
   }
 
-  /* El número escala con el círculo (container query), nunca por encima del display */
-  .timer-wrap { position: relative; width: min(78vw, 320px); aspect-ratio: 1; container-type: inline-size; border-radius: var(--r-full); }
+  /* ---- timer: tan grande como quepa; el número escala con el círculo ---- */
+  .timer-wrap {
+    position: relative;
+    width: min(70vmin, 420px, 42svh);
+    aspect-ratio: 1;
+    container-type: inline-size;
+    border-radius: var(--r-full);
+  }
   .timer-svg { width: 100%; height: 100%; transform: rotate(-90deg); }
   .t-bg { fill: none; stroke: var(--surface-2); stroke-width: 10; }
   .t-fg {
@@ -174,14 +201,78 @@ import Icon from '../components/Icon.astro';
   .timer-wrap.descanso .t-fg { stroke: var(--warning); }
   .timer-wrap.pausado .t-fg { stroke: var(--fg-subtle); }
   .timer-centro { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s-1); }
-  .t-fase { font-size: var(--t-sm); font-weight: 700; letter-spacing: 0.14em; color: var(--fg-muted); }
+  .t-fase { font-size: min(var(--t-sm), 6cqi); font-weight: 700; letter-spacing: 0.14em; color: var(--fg-muted); }
   .timer-wrap.descanso .t-fase { color: var(--warning); }
-  .t-num { font-size: min(var(--t-display), 22cqi); font-weight: 800; line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
-  .t-hint { font-size: var(--t-xs); }
+  .t-num { font-size: min(var(--t-display), 26cqi); font-weight: 800; line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .timer-wrap.pausado .t-num { color: var(--fg-muted); }
+  .t-hint { min-height: 1lh; font-size: var(--t-xs); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--fg-muted); }
 
-  .fin { display: flex; flex-direction: column; align-items: center; gap: var(--s-4); padding-top: var(--s-6); text-align: center; }
+  /* ---- barra de acción ---- */
+  .barra-accion {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    margin-inline: calc(-1 * var(--s-4));
+    padding: var(--s-3) var(--s-4) calc(var(--s-3) + env(safe-area-inset-bottom, 0px));
+    margin-bottom: calc(-1 * var(--shell-bottom));
+    background: var(--bar-bg);
+    backdrop-filter: blur(14px);
+    border-top: 1px solid var(--line);
+  }
+  .barra-fila { display: none; align-items: center; gap: var(--s-2); }
+  /* El botón principal cede ancho antes que empujar el micrófono fuera (320 px) */
+  .barra-fila .btn:not(.btn-sm) { flex: 1; min-width: 0; padding-inline: var(--s-3); }
+  #player[data-fase='espera'] #barEspera,
+  #player:is([data-fase='trabajo'], [data-fase='descanso']) #barTimer { display: flex; }
+  #player:is([data-fase='cuenta'], [data-fase='fin']) .barra-accion { display: none; }
+
+  .mic[aria-pressed='true'] { color: var(--success); box-shadow: inset 0 0 0 1.5px var(--success); }
+
+  /* ---- paneles ---- */
+  .cfg { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); font-size: var(--t-sm); color: var(--fg-muted); }
+  .nota { font-size: var(--t-xs); }
+  .btn-leer { align-self: flex-start; }
+  .btn-leer.leyendo { color: var(--focus); box-shadow: inset 0 0 0 1px var(--focus); }
+  .pasos { display: flex; flex-direction: column; gap: var(--s-2); padding-left: var(--s-5); font-size: var(--t-sm); color: var(--fg-muted); }
+
+  /* ---- final ---- */
+  #vistaFin { flex: 1; display: flex; align-items: center; }
+  #vistaFin.oculto { display: none; }
+  .fin { width: 100%; display: flex; flex-direction: column; align-items: center; gap: var(--s-4); text-align: center; }
   .fin-emoji { font-size: var(--t-display); line-height: 1; animation: aparecer var(--dur-3) var(--ease-out) both; }
   .fin h2 { font-size: var(--t-xl); }
+
+  /* ---- horizontal en el móvil (apoyado en el suelo) ----
+     Ilustración a la izquierda, timer y acciones a la derecha. Mientras corre
+     el tiempo desaparece la cabecera para darle todo el alto al timer. */
+  @media (orientation: landscape) and (max-height: 540px) {
+    :global(.shell:has(> #player)) { max-width: none; }
+    /* Alto fijo (no mínimo): así las filas son definidas y el timer puede
+       medirse contra el hueco real que le queda */
+    #player {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      column-gap: var(--s-5);
+      height: calc(100svh - var(--shell-top) - var(--shell-bottom));
+      min-height: 0;
+    }
+    .cabecera { grid-column: 1 / -1; }
+    .escena { display: contents; }
+    .media { grid-column: 1; grid-row: 2 / 4; display: flex; }
+    .media .media-frame,
+    #player:is([data-fase='cuenta'], [data-fase='trabajo'], [data-fase='descanso']) .media .media-frame { flex: 1; height: auto; }
+    .info { grid-column: 2; grid-row: 2; min-height: 0; }
+    .barra-accion { grid-column: 2; grid-row: 3; margin-inline: 0; border-top: none; border-radius: var(--r-lg) var(--r-lg) 0 0; }
+    #vistaFin { grid-column: 1 / -1; grid-row: 2 / 4; }
+
+    #player:is([data-fase='trabajo'], [data-fase='descanso']) .cabecera { display: none; }
+    /* Con el tiempo corriendo, la ilustración ya identifica el ejercicio: el
+       alto que ocupaba el título pasa al timer */
+    #player:is([data-fase='trabajo'], [data-fase='descanso']) .ex-titulo { display: none; }
+    #estTimer { min-height: 0; container-type: size; }
+    .timer-wrap { width: min(100cqw, 100cqh); }
+  }
 </style>
 
 <script>
@@ -195,8 +286,8 @@ import Icon from '../components/Icon.astro';
   import { mediaUrl, precargar } from '../lib/media.js';
   import { segundosPorSerie as calcSegundosPorSerie } from '../lib/plan.js';
   import { musculo, equipamiento } from '../lib/textos.js';
-  import { conectarStepper } from '../lib/ui.js';
-  import { conIcono } from '../lib/iconos.js';
+  import { conectarStepper, conectarSheet } from '../lib/ui.js';
+  import { icono, conIcono } from '../lib/iconos.js';
   import { navigate } from 'astro:transitions/client';
 
   document.addEventListener('astro:page-load', () => {
@@ -217,7 +308,8 @@ import Icon from '../components/Icon.astro';
       return;
     }
     const voz = vozDe(perfil.idioma);
-    $('vozPalabra').textContent = `«${voz.palabra}»`;
+    const sheetAjustes = conectarSheet($('sheetAjustes'));
+    const sheetPasos = conectarSheet($('sheetPasos'));
 
     const settings = getSettings();
     const CIRC = 2 * Math.PI * 88; // circunferencia del arco del timer
@@ -299,15 +391,14 @@ import Icon from '../components/Icon.astro';
 
     function mostrarEstado(fase) {
       st.fase = fase;
+      root.dataset.fase = fase; // el CSS decide barra, tamaños y qué se ve
       $('estEspera').classList.toggle('oculto', fase !== 'espera');
       $('estCuenta').classList.toggle('oculto', fase !== 'cuenta');
       $('estTimer').classList.toggle('oculto', fase !== 'trabajo' && fase !== 'descanso');
-      if (fase === 'espera') {
-        const puedeVoz = soportaVoz();
-        $('btnMic').classList.toggle('oculto', !puedeVoz || !!escucha);
-        if (!puedeVoz) $('vozEstado').textContent = 'Tu navegador no soporta voz: usa el botón';
-      }
     }
+
+    // Texto para lectores de pantalla en cada cambio de fase
+    const anunciar = (texto) => { $('anuncio').textContent = texto; };
 
     // ---------- timer ----------
     function arrancarCuenta(segundos, fase) {
@@ -340,7 +431,8 @@ import Icon from '../components/Icon.astro';
       $('tArco').style.strokeDashoffset = String(CIRC * (1 - st.restante / st.total));
       $('timerWrap').classList.toggle('descanso', st.fase === 'descanso');
       $('timerWrap').classList.toggle('pausado', st.pausado);
-      $('tHint').textContent = st.pausado ? 'pausado · toca para seguir' : 'toca para pausar';
+      $('tHint').textContent = st.pausado ? 'en pausa' : '';
+      $('btnPausa').innerHTML = st.pausado ? conIcono('play', 'Seguir') : conIcono('pause', 'Pausar');
       renderDots();
       persistir();
     }
@@ -352,10 +444,12 @@ import Icon from '../components/Icon.astro';
           siguienteEjercicio(); // suena el cambio de ejercicio (o el fin)
         } else {
           sonidoFinSerie();
+          anunciar(`Descanso de ${st.descanso} segundos`);
           arrancarCuenta(st.descanso, 'descanso');
         }
       } else if (st.fase === 'descanso') {
         sonidoSerie();
+        anunciar(`Serie ${st.serie + 1} de ${st.series}`);
         arrancarCuenta(segundosPorSerie(), 'trabajo');
       }
     }
@@ -363,6 +457,8 @@ import Icon from '../components/Icon.astro';
     function empezarEjercicio() {
       if (st.fase !== 'espera') return;
       resetLectura();
+      sheetAjustes.cerrar();
+      sheetPasos.cerrar();
       initAudio();
       if (!st.sesionActiva) {
         st.sesionActiva = true;
@@ -403,6 +499,7 @@ import Icon from '../components/Icon.astro';
 
     function comenzarTrabajo() {
       sonidoInicio();
+      anunciar(`Serie 1 de ${st.series}`);
       mostrarEstado('trabajo');
       arrancarCuenta(segundosPorSerie(), 'trabajo');
     }
@@ -420,12 +517,14 @@ import Icon from '../components/Icon.astro';
       // El siguiente ejercicio siempre espera el comando de voz «ahora»
       renderEjercicio();
       persistir();
+      anunciar(`Siguiente ejercicio: ${rutina[st.idx].name}`);
       document.startViewTransition?.(() => {});
     }
 
     function terminar() {
       sonidoFin();
-      st.fase = 'fin';
+      mostrarEstado('fin');
+      anunciar('Entrenamiento completado');
       st.sesionActiva = false;
       clearSesion();
       quitarGuardia();
@@ -495,7 +594,7 @@ import Icon from '../components/Icon.astro';
     function salirDeVerdad() {
       clearInterval(st.timerId);
       st.sesionActiva = false;
-      st.fase = 'fin';
+      mostrarEstado('fin');
       clearSesion();
       quitarGuardia();
       callar();
@@ -593,6 +692,23 @@ import Icon from '../components/Icon.astro';
     });
 
     // ---------- voz ----------
+    // El botón del micrófono es un interruptor; su estado se refleja en él y en
+    // la línea de ayuda bajo el ejercicio.
+    function pintarVoz(estado) {
+      const on = estado === 'escuchando';
+      $('btnMic').setAttribute('aria-pressed', String(on));
+      $('btnMic').innerHTML = icono(on ? 'mic' : 'mic-off');
+      $('vozMsg').classList.toggle('escuchando', on);
+      $('vozMsg').innerHTML = on
+        ? `Di <b>«${voz.palabra}»</b> para empezar`
+        : 'Toca <b>Empezar</b> cuando estés en posición';
+      $('vozEstado').textContent =
+        estado === 'denegado' ? 'Micrófono denegado: usa el botón para empezar'
+        : estado === 'sin-soporte' ? ''
+        : on ? 'Escuchando…'
+        : `O activa el micrófono y di «${voz.palabra}»`;
+    }
+
     function activarMic() {
       initAudio();
       if (!escucha) {
@@ -601,29 +717,39 @@ import Icon from '../components/Icon.astro';
           onComando: () => {
             if (st.fase === 'espera') empezarEjercicio();
           },
-          onEstado: (e) => {
-            $('micDot').classList.toggle('on', e === 'escuchando');
-            $('vozCirculo').classList.toggle('escuchando', e === 'escuchando');
-            if (e === 'escuchando') $('vozEstado').textContent = `Escuchando… di «${voz.palabra}» cuando estés en posición`;
-            if (e === 'denegado') $('vozEstado').textContent = 'Micrófono denegado: usa el botón para empezar';
-          },
+          onEstado: pintarVoz,
         });
       }
       escucha?.start();
+    }
+
+    if (soportaVoz()) pintarVoz('apagado');
+    else {
       $('btnMic').classList.add('oculto');
+      pintarVoz('sin-soporte');
     }
 
     // ---------- eventos ----------
-    $('btnMic').addEventListener('click', () => { initAudio(); sonidoTap(); activarMic(); });
+    $('btnMic').addEventListener('click', () => {
+      initAudio();
+      sonidoTap();
+      if (escucha?.activo) escucha.stop();
+      else activarMic();
+    });
+    $('btnAjustar').addEventListener('click', () => { sonidoTap(); sheetAjustes.abrir(); });
+    $('btnPasos').addEventListener('click', () => { sonidoTap(); sheetPasos.abrir(); });
     $('btnManual').addEventListener('click', empezarEjercicio);
     $('btnSaltar').addEventListener('click', () => { sonidoTap(); siguienteEjercicio(); });
-    $('timerWrap').addEventListener('click', () => {
+    const alternarPausa = () => {
       if (st.fase === 'trabajo' || st.fase === 'descanso') {
         st.pausado = !st.pausado;
         sonidoTap();
         pintarTimer();
+        anunciar(st.pausado ? 'En pausa' : 'Seguimos');
       }
-    });
+    };
+    $('timerWrap').addEventListener('click', alternarPausa);
+    $('btnPausa').addEventListener('click', alternarPausa);
 
     // Botón «volver»: si hay entrenamiento en curso, pregunta antes de salir
     $('btnVolver').addEventListener('click', (e) => {
