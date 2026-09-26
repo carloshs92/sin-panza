@@ -1,42 +1,122 @@
 ---
 import Base from '../layouts/Base.astro';
 import TopBar from '../components/TopBar.astro';
+import Sheet from '../components/Sheet.astro';
 import Icon from '../components/Icon.astro';
 ---
-<Base title="Editar rutina">
-  <div id="editor" class="stack">
+<Base title="Editar rutina" ancho="ancho">
+  <div id="editor" class="editor">
     <TopBar volver="/rutinas" tituloId="eDia" subId="eResumen" />
 
-    <ol class="lista" id="listaEx"></ol>
+    <ol class="lista" id="listaEx" aria-label="Ejercicios del día"></ol>
 
-    <a class="btn btn-secondary" id="btnAnadir" href="#"><Icon nombre="plus" /> Añadir ejercicio</a>
-    <a class="btn" id="btnEntrenar" href="#"><Icon nombre="play" /> Entrenar este día</a>
+    <div class="acciones-dia">
+      <a class="btn btn-secondary" id="btnAnadir" href="#"><Icon nombre="plus" /> Añadir ejercicio</a>
+      <a class="btn" id="btnEntrenar" href="#"><Icon nombre="play" /> Entrenar este día</a>
+    </div>
+
+    <!-- ≥ 900 px: detalle del ejercicio elegido con sus acciones -->
+    <aside class="previa" id="previa" aria-live="polite"></aside>
+
+    <!-- < 900 px: las acciones de un ejercicio en un panel inferior -->
+    <Sheet id="sheetAcciones" titulo="Ejercicio">
+      <div id="accionesSheet"></div>
+    </Sheet>
   </div>
 </Base>
 
 <style>
-  #editor { gap: var(--s-5); }
+  /* Móvil: una columna. ≥ 900: lista a la izquierda, detalle a la derecha. */
+  /* minmax(0, 1fr): sin él, los textos nowrap ensanchan la columna implícita */
+  .editor { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-4); }
+  @media (min-width: 900px) {
+    .editor {
+      grid-template-columns: minmax(0, 1fr) 380px;
+      grid-template-areas: 'top top' 'lista previa' 'acciones previa';
+      grid-template-rows: auto auto 1fr;
+      column-gap: var(--s-6);
+      align-items: start;
+    }
+    .editor > :global(.topbar) { grid-area: top; }
+    .lista { grid-area: lista; }
+    .acciones-dia { grid-area: acciones; }
+    .previa { grid-area: previa; }
+  }
+
   .lista { display: flex; flex-direction: column; gap: var(--s-2); list-style: none; }
 
   .lista :global(.ex-fila) {
-    display: flex; align-items: center; gap: var(--s-3);
-    padding: var(--s-3);
+    display: flex; align-items: center; gap: var(--s-1);
+    padding: var(--s-1);
     border-radius: var(--r-lg);
     background: var(--surface-1);
     border: 1px solid var(--line);
+    transition: border-color var(--dur-1), background var(--dur-1);
   }
-  .lista :global(.ex-fila .media-frame) { width: 52px; height: 52px; }
+  .lista :global(.ex-fila.sel) { border-color: var(--line-strong); background: var(--surface-2); }
+  .lista :global(.ex-fila.arrastrando) {
+    position: relative; z-index: 2;
+    border-color: var(--accent);
+    background: var(--surface-2);
+    transition: none;
+  }
+
+  /* Asa para arrastrar: táctil sin que la página haga scroll */
+  .lista :global(.asa) {
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    width: 32px; height: var(--tap);
+    border-radius: var(--r-sm);
+    color: var(--fg-subtle);
+    cursor: grab;
+    touch-action: none;
+  }
+  .lista :global(.ex-fila.arrastrando .asa) { cursor: grabbing; color: var(--accent); }
+
+  .lista :global(.ex-cuerpo) {
+    flex: 1; min-width: 0;
+    display: flex; align-items: center; gap: var(--s-3);
+    min-height: 60px; padding: var(--s-1);
+    border-radius: var(--r-md);
+    text-align: left;
+  }
+  .lista :global(.ex-cuerpo .media-frame) { width: 52px; height: 52px; }
   .lista :global(.ex-datos) { flex: 1; min-width: 0; }
   .lista :global(.ex-datos b),
   .lista :global(.ex-meta) { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .lista :global(.ex-datos b) { font-size: var(--t-sm); text-transform: capitalize; }
   .lista :global(.ex-meta) { margin-top: 2px; font-size: var(--t-xs); color: var(--fg-muted); }
+  .lista :global(.mas) { background: transparent; box-shadow: none; color: var(--fg-muted); }
+  @media (min-width: 900px) { .lista :global(.mas) { display: none; } }
+  @media (hover: hover) { .lista :global(.ex-fila:not(.sel):hover) { background: var(--surface-2); } }
 
-  .lista :global(.ex-btns) { display: grid; grid-template-columns: repeat(2, var(--tap)); gap: var(--s-1); flex-shrink: 0; }
-  .lista :global(.ex-btns .icon-btn) { font-size: var(--t-md); }
-  .lista :global(.ex-btns .quitar) { color: var(--danger); }
+  .lista :global(.vacio) { padding: var(--s-6) var(--s-3); text-align: center; color: var(--fg-muted); }
 
-  .vacio { padding: var(--s-6) var(--s-3); text-align: center; color: var(--fg-muted); }
+  .acciones-dia { display: flex; flex-direction: column; gap: var(--s-2); }
+  @media (min-width: 600px) { .acciones-dia { flex-direction: row; } }
+
+  /* ---- detalle (solo ≥ 900) ---- */
+  .previa { display: none; }
+  @media (min-width: 900px) {
+    .previa:not(:empty) {
+      display: flex; flex-direction: column; gap: var(--s-4);
+      position: sticky; top: var(--shell-top);
+      padding: var(--s-4);
+      border-radius: var(--r-lg);
+      background: var(--surface-1);
+      border: 1px solid var(--line);
+    }
+  }
+  .previa :global(.media-frame) { display: flex; justify-content: center; height: 240px; border-radius: var(--r-md); }
+  .previa :global(.media-frame img) { width: auto; }
+  .previa :global(h2) { font-size: var(--t-lg); text-transform: capitalize; }
+  .previa :global(.previa-tags) { display: flex; flex-wrap: wrap; gap: var(--s-1); margin-top: var(--s-2); }
+  .previa :global(.pasos) { display: flex; flex-direction: column; gap: var(--s-2); padding-left: var(--s-5); font-size: var(--t-sm); color: var(--fg-muted); }
+
+  /* ---- acciones de un ejercicio (panel y detalle) ---- */
+  .editor :global(.acciones-ej) { display: grid; gap: var(--s-2); }
+  .previa :global(.acciones-ej) { grid-template-columns: 1fr 1fr; }
+  .editor :global(.acciones-ej .btn) { width: 100%; justify-content: flex-start; }
+  .editor :global(.acciones-ej .quitar) { color: var(--danger); }
 </style>
 
 <script>
@@ -44,7 +124,8 @@ import Icon from '../components/Icon.astro';
   import { mediaUrl, precargar } from '../lib/media.js';
   import { duracionEstimadaMin } from '../lib/plan.js';
   import { musculo, equipamiento } from '../lib/textos.js';
-  import { icono } from '../lib/iconos.js';
+  import { icono, conIcono } from '../lib/iconos.js';
+  import { conectarSheet } from '../lib/ui.js';
   import { navigate } from 'astro:transitions/client';
 
   document.addEventListener('astro:page-load', () => {
@@ -61,6 +142,9 @@ import Icon from '../components/Icon.astro';
 
     const settings = getSettings();
     let ejercicios = getRoutineDay(dia);
+    let sel = 0; // ejercicio elegido (detalle en escritorio, panel en móvil)
+    const escritorio = matchMedia('(min-width: 900px)');
+    const sheet = conectarSheet($('sheetAcciones'));
 
     $('eDia').textContent = DIAS.find((d) => d.id === dia)?.label ?? dia;
     $('btnEntrenar').href = `/entrenar?dia=${dia}`;
@@ -71,6 +155,15 @@ import Icon from '../components/Icon.astro';
       pintar();
     };
 
+    // Acciones de un ejercicio: las mismas en el panel del móvil y en el detalle
+    const accionesHTML = (i) => `
+      <div class="acciones-ej">
+        <button class="btn btn-secondary btn-sm" data-accion="subir" data-i="${i}" ${i === 0 ? 'disabled' : ''}>${conIcono('arrow-up', 'Subir')}</button>
+        <button class="btn btn-secondary btn-sm" data-accion="bajar" data-i="${i}" ${i === ejercicios.length - 1 ? 'disabled' : ''}>${conIcono('arrow-down', 'Bajar')}</button>
+        <button class="btn btn-secondary btn-sm" data-accion="cambiar" data-i="${i}">${conIcono('arrow-left-right', 'Cambiar')}</button>
+        <button class="btn btn-ghost btn-sm quitar" data-accion="quitar" data-i="${i}">${conIcono('trash', 'Quitar')}</button>
+      </div>`;
+
     function pintar() {
       $('eResumen').textContent =
         `${ejercicios.length} ejercicios · ~${duracionEstimadaMin(ejercicios.length, settings)} min`;
@@ -78,51 +171,164 @@ import Icon from '../components/Icon.astro';
       const lista = $('listaEx');
       if (ejercicios.length === 0) {
         lista.innerHTML = '<li class="vacio">Este día no tiene ejercicios.<br />Añade uno para empezar.</li>';
+        $('previa').innerHTML = '';
+        sheet.cerrar();
         return;
       }
+      sel = Math.min(sel, ejercicios.length - 1);
 
       lista.innerHTML = ejercicios
         .map(
           (e, i) => `
-        <li class="ex-fila">
-          <div class="media-frame"><img src="${mediaUrl(e.image)}" alt="" loading="lazy" decoding="async" /></div>
-          <div class="ex-datos">
-            <b>${e.name}</b>
-            <div class="ex-meta">${musculo(e.target)} · ${equipamiento(e.equipment)}</div>
-          </div>
-          <div class="ex-btns">
-            <button class="icon-btn" data-accion="subir" data-i="${i}" ${i === 0 ? 'disabled' : ''} aria-label="Subir">${icono('arrow-up')}</button>
-            <button class="icon-btn" data-accion="bajar" data-i="${i}" ${i === ejercicios.length - 1 ? 'disabled' : ''} aria-label="Bajar">${icono('arrow-down')}</button>
-            <button class="icon-btn" data-accion="cambiar" data-i="${i}" aria-label="Cambiar ejercicio">${icono('arrow-left-right')}</button>
-            <button class="icon-btn quitar" data-accion="quitar" data-i="${i}" aria-label="Quitar">${icono('trash')}</button>
-          </div>
+        <li class="ex-fila${i === sel ? ' sel' : ''}" data-i="${i}">
+          <button class="asa" data-asa="${i}" aria-label="Mover ${e.name}: arrastra o usa las flechas arriba y abajo">${icono('grip')}</button>
+          <button class="ex-cuerpo" data-elegir="${i}" aria-current="${i === sel}">
+            <span class="media-frame"><img src="${mediaUrl(e.image)}" alt="" loading="lazy" decoding="async" /></span>
+            <span class="ex-datos">
+              <b>${e.name}</b>
+              <span class="ex-meta">${musculo(e.target)} · ${equipamiento(e.equipment)}</span>
+            </span>
+          </button>
+          <button class="icon-btn mas" data-menu="${i}" aria-label="Opciones de ${e.name}">${icono('more')}</button>
         </li>`
         )
         .join('');
 
+      pintarPrevia();
+      if ($('sheetAcciones').open) pintarSheet();
       // Las miniaturas de este día quedan en caché para la próxima visita
       precargar(ejercicios.map((e) => e.image));
     }
 
-    $('listaEx').addEventListener('click', (ev) => {
-      const btn = ev.target.closest('button[data-accion]');
-      if (!btn) return;
-      const i = Number(btn.dataset.i);
-      const accion = btn.dataset.accion;
+    // El detalle solo se pinta en escritorio: en el móvil no descargamos el GIF
+    function pintarPrevia() {
+      const e = ejercicios[sel];
+      if (!escritorio.matches || !e) {
+        $('previa').innerHTML = '';
+        return;
+      }
+      $('previa').innerHTML = `
+        <div class="media-frame"><img src="${mediaUrl(e.gif)}" alt="Demostración de ${e.name}" /></div>
+        <div>
+          <p class="eyebrow">Ejercicio ${sel + 1} de ${ejercicios.length}</p>
+          <h2>${e.name}</h2>
+          <div class="previa-tags"><span class="tag">${musculo(e.target)}</span><span class="tag">${equipamiento(e.equipment)}</span></div>
+        </div>
+        ${accionesHTML(sel)}
+        <ol class="pasos">${e.steps.map((p) => `<li>${p}</li>`).join('')}</ol>`;
+    }
 
-      if (accion === 'subir' && i > 0) {
-        [ejercicios[i - 1], ejercicios[i]] = [ejercicios[i], ejercicios[i - 1]];
-        guardar();
-      } else if (accion === 'bajar' && i < ejercicios.length - 1) {
-        [ejercicios[i], ejercicios[i + 1]] = [ejercicios[i + 1], ejercicios[i]];
-        guardar();
-      } else if (accion === 'quitar') {
+    function pintarSheet() {
+      $('sheetAcciones-titulo').textContent = ejercicios[sel]?.name ?? '';
+      $('accionesSheet').innerHTML = accionesHTML(sel);
+    }
+
+    function mover(i, hasta) {
+      if (hasta < 0 || hasta >= ejercicios.length || hasta === i) return;
+      const [e] = ejercicios.splice(i, 1);
+      ejercicios.splice(hasta, 0, e);
+      if (sel === i) sel = hasta;
+      guardar();
+    }
+
+    function accion(nombre, i) {
+      if (nombre === 'subir') mover(i, i - 1);
+      else if (nombre === 'bajar') mover(i, i + 1);
+      else if (nombre === 'cambiar') navigate(`/buscar?dia=${dia}&pos=${i}`);
+      else if (nombre === 'quitar') {
         ejercicios.splice(i, 1);
+        sheet.cerrar();
         guardar();
-      } else if (accion === 'cambiar') {
-        navigate(`/buscar?dia=${dia}&pos=${i}`);
+      }
+    }
+
+    // Un solo manejador para lista, panel y detalle
+    root.addEventListener('click', (ev) => {
+      const btnAccion = ev.target.closest('button[data-accion]');
+      if (btnAccion) return accion(btnAccion.dataset.accion, Number(btnAccion.dataset.i));
+
+      const elegir = ev.target.closest('[data-elegir], [data-menu]');
+      if (!elegir) return;
+      sel = Number(elegir.dataset.elegir ?? elegir.dataset.menu);
+      if (escritorio.matches) {
+        pintar();
+      } else {
+        root.querySelectorAll('.ex-fila').forEach((f) => f.classList.toggle('sel', Number(f.dataset.i) === sel));
+        pintarSheet();
+        sheet.abrir();
       }
     });
+
+    // ---- reordenar arrastrando el asa (ratón y táctil) ----
+    const lista = $('listaEx');
+    let drag = null;
+
+    lista.addEventListener('pointerdown', (ev) => {
+      const asa = ev.target.closest('.asa');
+      if (!asa) return;
+      ev.preventDefault();
+      asa.setPointerCapture(ev.pointerId);
+      const fila = asa.closest('.ex-fila');
+      fila.classList.add('arrastrando');
+      drag = { fila, y0: ev.clientY, desde: Number(fila.dataset.i) };
+    });
+
+    lista.addEventListener('pointermove', (ev) => {
+      if (!drag) return;
+      const { fila } = drag;
+      const gap = parseFloat(getComputedStyle(lista).rowGap) || 0;
+      let dy = ev.clientY - drag.y0;
+      // Al pasar la mitad de la fila vecina se intercambian en el DOM y el
+      // desplazamiento se recalcula desde la nueva posición
+      const sig = fila.nextElementSibling;
+      const ant = fila.previousElementSibling;
+      if (sig && dy > (sig.offsetHeight + gap) / 2) {
+        lista.insertBefore(sig, fila);
+        drag.y0 += sig.offsetHeight + gap;
+      } else if (ant && dy < -(ant.offsetHeight + gap) / 2) {
+        lista.insertBefore(fila, ant);
+        drag.y0 -= ant.offsetHeight + gap;
+      }
+      dy = ev.clientY - drag.y0;
+      fila.style.transform = `translateY(${dy}px)`;
+    });
+
+    const soltar = () => {
+      if (!drag) return;
+      const { fila, desde } = drag;
+      drag = null;
+      fila.classList.remove('arrastrando');
+      fila.style.transform = '';
+      const orden = [...lista.children].map((li) => Number(li.dataset.i));
+      if (orden.every((v, k) => v === k)) return;
+      const elegido = ejercicios[sel];
+      ejercicios = orden.map((k) => ejercicios[k]);
+      sel = ejercicios.indexOf(elegido);
+      guardar();
+      lista.querySelector(`[data-asa="${orden.indexOf(desde)}"]`)?.focus({ preventScroll: true });
+    };
+    lista.addEventListener('pointerup', soltar);
+    lista.addEventListener('pointercancel', soltar);
+
+    // Teclado: el asa se mueve con las flechas
+    lista.addEventListener('keydown', (ev) => {
+      const asa = ev.target.closest('.asa');
+      if (!asa || (ev.key !== 'ArrowUp' && ev.key !== 'ArrowDown')) return;
+      ev.preventDefault();
+      const i = Number(asa.dataset.asa);
+      const hasta = ev.key === 'ArrowUp' ? i - 1 : i + 1;
+      mover(i, hasta);
+      lista.querySelector(`[data-asa="${hasta}"]`)?.focus();
+    });
+
+    // Al cruzar los 900 px aparece o desaparece el detalle
+    const alCambiarAncho = () => {
+      sheet.cerrar();
+      pintar();
+    };
+    escritorio.addEventListener('change', alCambiarAncho);
+    // El MediaQueryList sobrevive a la navegación con view transitions
+    document.addEventListener('astro:before-swap', () => escritorio.removeEventListener('change', alCambiarAncho), { once: true });
 
     pintar();
   });

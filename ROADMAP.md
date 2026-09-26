@@ -95,20 +95,29 @@ Estado: `[ ]` pendiente · `[~]` en curso · `[x]` hecho
     final (no cada segundo).
   - Las pantallas sin barra de navegación ya no reservan 96 px abajo.
 
-- [ ] **0.6 · Layouts responsive** · M · _depende de 0.3_
-  Mobile-first; container queries en componentes, media queries solo para el
-  layout.
-  - `< 360`: compacto · `360–599`: una columna + barra inferior ·
-    `600–899`: grids de 2 · `≥ 900`: rail lateral y vistas de dos paneles.
-  - Rutinas: en móvil el calendario se reduce a la tira de la semana; en
-    escritorio, hoy + semana a la izquierda y calendario a la derecha.
-  - Buscar: filtros en sidebar y resultados en grid `auto-fill` en escritorio.
-  - Editar: arrastrar para reordenar y menú «⋯» por fila (no 4 botones de
-    32 px); en escritorio, lista + vista previa.
-  - `(hover: hover)` para hovers, `(pointer: coarse)` para objetivos táctiles,
-    `prefers-reduced-motion` en todo.
-  - ✅ *Listo cuando*: se revisa cada pantalla a 320, 375, 768, 1024 y 1440 px
-    sin scroll horizontal ni columnas vacías.
+- [x] **0.6 · Layouts responsive** · M · _depende de 0.3_
+  Mobile-first con dos cortes (600 y 900 px, documentados en `global.css`)
+  más el móvil tumbado en Entrenar.
+  - ≥ 900: la barra inferior pasa a **raíl lateral**; `Base` acepta
+    `ancho="ancho"` (hasta 1120 px) para las pantallas de dos paneles.
+  - Rutinas: en el móvil el calendario enseña solo la semana actual con «Ver
+    el mes»; rutinas en 2 columnas desde 600; en escritorio hoy + rutinas a la
+    izquierda y progreso fijo a la derecha.
+  - Buscar: resultados en rejilla desde 600; en escritorio filtros en barra
+    lateral fija con las zonas envueltas.
+  - Editar: asa para **arrastrar** (ratón y táctil) que también se mueve con
+    ↑/↓; fila entera tocable y menú **⋯** con panel de acciones en el móvil;
+    en escritorio lista + detalle (GIF, pasos y acciones).
+  - Entrenar en escritorio con el mismo diseño de dos paneles que en
+    horizontal; marco cuadrado de hasta 440 px (los GIF son de 180×180: más
+    de 2× solo emborrona).
+  - Ajustes en dos columnas y onboarding centrado a 480 px desde 600.
+  - Arreglado el desbordamiento de rejillas con `minmax(0, 1fr)` (los
+    nombres largos ensanchaban la columna en Editar y Buscar).
+  - ✅ Verificado: sin scroll horizontal en 7 pantallas × 320/375/768/1024/1440.
+  - Pendiente: las container queries de tarjetas no hicieron falta; se
+    retomarán si aparece una tarjeta que viva en contenedores de distinto
+    ancho.
 
 - [ ] **0.7 · Tests de la lógica** · S
   Vitest para `plan.js` y `calcularRacha`. Las fases 2 y 5 son pura lógica.
@@ -274,4 +283,4 @@ subir una serie no necesita un modelo de lenguaje, necesita recordar cómo te fu
 3. Un commit por ítem, marcando aquí la casilla en el mismo commit.
 4. Si algo se descubre por el camino, se añade al roadmap en vez de improvisar.
 
-**Siguiente**: 0.6 — layouts responsive.
+**Siguiente**: 0.7 — tests de la lógica.

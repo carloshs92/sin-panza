@@ -100,10 +100,21 @@
   /* Tamaños */
   --tap: 44px;         /* objetivo táctil mínimo */
   --shell-max: 560px;
+  --shell-max-ancho: 1120px; /* pantallas con dos paneles o grids */
+  --rail: 96px;              /* navegación lateral en escritorio */
   /* Relleno vertical del contenedor principal (respeta notch y barra de inicio) */
   --shell-top: max(var(--s-5), calc(env(safe-area-inset-top, 0px) + var(--s-3)));
   --shell-bottom: max(var(--s-4), calc(env(safe-area-inset-bottom, 0px) + var(--s-2)));
 }
+
+/* ==========================================================================
+   Puntos de corte (las variables no sirven dentro de @media, así que se
+   escriben a mano y SOLO estos):
+     600px  → tablet vertical / móvil horizontal: grids de 2
+     900px  → tablet horizontal / escritorio: raíl lateral y dos paneles
+   Además: (orientation: landscape) and (max-height: 540px) para el móvil
+   tumbado en Entrenar.
+   ========================================================================== */
 
 /* ==========================================================================
    Base
@@ -156,6 +167,10 @@ button { cursor: pointer; border: none; background: none; }
 }
 /* Sin barra de navegación no hace falta reservarle sitio abajo */
 .shell.sin-nav { padding-bottom: var(--shell-bottom); }
+/* Pantallas con dos paneles o grids: más ancho a partir de 900 px */
+@media (min-width: 900px) {
+  .shell.ancho { max-width: var(--shell-max-ancho); }
+}
 
 /* Separación vertical entre bloques de una página */
 .stack { display: flex; flex-direction: column; gap: var(--s-4); }
@@ -428,6 +443,7 @@ button { cursor: pointer; border: none; background: none; }
 }
 .toast .icon { color: var(--success); }
 .toast.saliendo { opacity: 0; transition: opacity var(--dur-2); }
+@media (min-width: 900px) { .toast { bottom: var(--s-6); } }
 
 /* ==========================================================================
    Estructura de la app
@@ -513,6 +529,33 @@ button { cursor: pointer; border: none; background: none; }
 .bottom-nav a.active { color: var(--fg); background: var(--surface-2); }
 .bottom-nav a.active .icon { color: var(--accent); }
 .bottom-nav a .icon { width: 22px; height: 22px; }
+
+/* ≥ 900 px: la barra inferior pasa a raíl lateral fijo */
+@media (min-width: 900px) {
+  body.con-nav { padding-left: var(--rail); }
+  body.con-nav .shell { padding-bottom: var(--s-7); }
+  .bottom-nav {
+    top: 0;
+    right: auto;
+    width: var(--rail);
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: var(--s-2);
+    padding: var(--shell-top) var(--s-2) var(--s-4);
+    padding-left: max(var(--s-2), env(safe-area-inset-left, 0px));
+    border-top: none;
+    border-right: 1px solid var(--line);
+  }
+  .bottom-nav a { min-width: 0; width: 100%; padding: var(--s-3) var(--s-1); }
+  .rail-logo { display: flex; }
+}
+.rail-logo {
+  display: none;
+  justify-content: center;
+  margin-bottom: var(--s-4);
+  color: var(--accent);
+  font-size: var(--t-xl);
+}
 
 /* ==========================================================================
    Animaciones

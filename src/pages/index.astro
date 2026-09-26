@@ -96,6 +96,15 @@ import Icon from '../components/Icon.astro';
 
 <style>
   #onboarding { display: flex; flex-direction: column; gap: var(--s-6); }
+  /* ≥ 600: formulario estrecho y centrado en la pantalla, no estirado */
+  @media (min-width: 600px) {
+    #onboarding {
+      max-width: 480px;
+      margin-inline: auto;
+      min-height: calc(100svh - var(--shell-top) - var(--shell-bottom));
+      justify-content: center;
+    }
+  }
   .ob-head { display: flex; flex-direction: column; gap: var(--s-4); }
   .logo { font-size: var(--t-lg); font-weight: 800; letter-spacing: -0.02em; }
   .logo b { color: var(--accent); }

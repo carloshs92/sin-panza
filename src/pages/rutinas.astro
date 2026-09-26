@@ -2,8 +2,8 @@
 import Base from '../layouts/Base.astro';
 import Icon from '../components/Icon.astro';
 ---
-<Base title="Mis rutinas" nav="rutinas">
-  <div id="rutinas" class="stack">
+<Base title="Mis rutinas" nav="rutinas" ancho="ancho">
+  <div id="rutinas" class="rutinas">
     <header class="cab">
       <p class="muted" id="saludo">Hola 👋</p>
       <h1>Tu semana</h1>
@@ -12,26 +12,29 @@ import Icon from '../components/Icon.astro';
     <!-- Estado de hoy: si toca entrenar, es la acción principal de la pantalla -->
     <a class="hoy-card" id="hoyCard" href="#"></a>
 
-    <!-- Estadísticas -->
-    <div class="stats">
-      <div class="stat card"><b id="stRacha">0</b><span class="con-icono"><Icon nombre="flame" />racha</span></div>
-      <div class="stat card"><b id="stMes">0</b><span class="con-icono"><Icon nombre="calendar" />este mes</span></div>
-      <div class="stat card"><b id="stTotal">0</b><span class="con-icono"><Icon nombre="circle-check" />total</span></div>
-    </div>
-
-    <!-- Calendario del mes -->
-    <section class="card cal">
-      <div class="cal-head">
-        <h2 id="calTitulo">—</h2>
-        <span class="muted" id="calResumen"></span>
+    <!-- Progreso: debajo de hoy en el móvil, columna lateral en escritorio -->
+    <aside class="lateral">
+      <div class="stats">
+        <div class="stat card"><b id="stRacha">0</b><span class="con-icono"><Icon nombre="flame" />racha</span></div>
+        <div class="stat card"><b id="stMes">0</b><span class="con-icono"><Icon nombre="calendar" />este mes</span></div>
+        <div class="stat card"><b id="stTotal">0</b><span class="con-icono"><Icon nombre="circle-check" />total</span></div>
       </div>
-      <div class="cal-grid cal-labels" aria-hidden="true">
-        <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
-      </div>
-      <div class="cal-grid" id="calDias"></div>
-    </section>
 
-    <section class="stack">
+      <!-- En el móvil muestra solo la semana actual; «Ver el mes» lo despliega -->
+      <section class="card cal" id="cal">
+        <div class="cal-head">
+          <h2 id="calTitulo">—</h2>
+          <span class="muted" id="calResumen"></span>
+        </div>
+        <div class="cal-grid cal-labels" aria-hidden="true">
+          <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
+        </div>
+        <div class="cal-grid" id="calDias"></div>
+        <button class="btn btn-ghost btn-sm cal-toggle" id="calToggle" aria-expanded="false" aria-controls="calDias">Ver el mes</button>
+      </section>
+    </aside>
+
+    <section class="semana">
       <h2 class="eyebrow">Rutinas</h2>
       <div class="lista" id="listaDias"></div>
     </section>
@@ -39,7 +42,29 @@ import Icon from '../components/Icon.astro';
 </Base>
 
 <style>
-  .cab { display: flex; flex-direction: column; gap: var(--s-1); }
+  /* Móvil: una columna. ≥ 900: hoy + rutinas a la izquierda, progreso a la
+     derecha (fijo al hacer scroll). */
+  .rutinas {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s-4);
+    grid-template-areas: 'cab' 'hoy' 'lateral' 'semana';
+  }
+  .cab { grid-area: cab; display: flex; flex-direction: column; gap: var(--s-1); }
+  .hoy-card { grid-area: hoy; }
+  .lateral { grid-area: lateral; display: flex; flex-direction: column; gap: var(--s-4); }
+  .semana { grid-area: semana; display: flex; flex-direction: column; gap: var(--s-3); }
+
+  @media (min-width: 900px) {
+    .rutinas {
+      grid-template-columns: minmax(0, 1.7fr) minmax(300px, 1fr);
+      grid-template-rows: auto auto 1fr;
+      grid-template-areas: 'cab cab' 'hoy lateral' 'semana lateral';
+      column-gap: var(--s-6);
+      align-items: start;
+    }
+    .lateral { position: sticky; top: var(--shell-top); }
+  }
 
   /* ---- hoy ---- */
   .hoy-card {
@@ -92,8 +117,20 @@ import Icon from '../components/Icon.astro';
   .cal-grid :global(.cd.hoy) { box-shadow: inset 0 0 0 2px var(--fg); color: var(--fg); }
   .cal-grid :global(.cd.futuro) { background: transparent; color: var(--fg-subtle); }
 
+  .cal-toggle { width: 100%; margin-top: var(--s-2); }
+  /* Por debajo de 900 px el mes plegado enseña solo la fila de esta semana */
+  @media (max-width: 899.98px) {
+    .cal:not(.expandido) .cal-grid :global(.cd:not(.sem)) { display: none; }
+  }
+  @media (min-width: 900px) {
+    .cal-toggle { display: none; }
+  }
+
   /* ---- rutinas de la semana ---- */
-  .lista { display: flex; flex-direction: column; gap: var(--s-3); }
+  .lista { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-3); }
+  @media (min-width: 600px) {
+    .lista { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
   .lista :global(.dia-card) {
     overflow: hidden;
     border-radius: var(--r-lg);
@@ -200,7 +237,10 @@ import Icon from '../components/Icon.astro';
     let programadosMes = 0;
     // Los días anteriores a crear el plan no cuentan como fallados
     const inicioPlan = perfil.creado ? new Date(new Date(perfil.creado).toDateString()) : null;
-    let html = '<span class="cd vacio"></span>'.repeat(offset);
+    // Fila de la semana actual (lunes = columna 0): la vista plegada solo enseña esa
+    const filaHoy = Math.floor((offset + ahora.getDate() - 1) / 7);
+    const deEstaSemana = (pos) => (Math.floor(pos / 7) === filaHoy ? ' sem' : '');
+    let html = Array.from({ length: offset }, (_, pos) => `<span class="cd vacio${deEstaSemana(pos)}"></span>`).join('');
     for (let d = 1; d <= diasEnMes; d++) {
       const fecha = new Date(y, m, d);
       const esFuturo = fecha > ahora && fecha.toDateString() !== hoyStr;
@@ -215,11 +255,19 @@ import Icon from '../components/Icon.astro';
         !hecho && programado && !esFuturo && fecha.toDateString() !== hoyStr ? 'fallado' : '',
         fecha.toDateString() === hoyStr ? 'hoy' : '',
         esFuturo ? 'futuro' : '',
-      ].filter(Boolean).join(' ');
+      ].filter(Boolean).join(' ') + deEstaSemana(offset + d - 1);
       html += `<span class="${cls}">${d}</span>`;
     }
     calBox.innerHTML = html;
     root.querySelector('#calResumen').textContent = `${cumplidosMes}/${programadosMes} días cumplidos`;
+
+    const cal = root.querySelector('#cal');
+    const calToggle = root.querySelector('#calToggle');
+    calToggle.addEventListener('click', () => {
+      const abierto = cal.classList.toggle('expandido');
+      calToggle.setAttribute('aria-expanded', String(abierto));
+      calToggle.textContent = abierto ? 'Ver solo esta semana' : 'Ver el mes';
+    });
 
     // ---- lista de rutinas ----
     const lista = root.querySelector('#listaDias');

@@ -7,8 +7,10 @@ import Icon from '../components/Icon.astro';
 interface Props {
   title: string;
   nav?: 'rutinas' | 'ajustes' | null;
+  /** 'ancho' para pantallas con dos paneles o grids (hasta 1120 px en escritorio) */
+  ancho?: 'normal' | 'ancho';
 }
-const { title, nav = null } = Astro.props;
+const { title, nav = null, ancho = 'normal' } = Astro.props;
 ---
 <html lang="es">
   <head>
@@ -63,7 +65,7 @@ const { title, nav = null } = Astro.props;
     <title>{title} · SinPanza</title>
     <ClientRouter />
   </head>
-  <body>
+  <body class:list={{ 'con-nav': !!nav }}>
     <IconSprite />
     {/* Splash propio (Android/escritorio, y relevo del de iOS). transition:persist
         evita que se repita en cada navegación; se oculta solo con CSS. */}
@@ -74,11 +76,12 @@ const { title, nav = null } = Astro.props;
       <b>Sin<i>Panza</i></b>
     </div>
     <div id="sinRed" class="sin-red oculto" role="status"><Icon nombre="wifi-off" /> Sin conexión — usando lo que tienes guardado</div>
-    <main class:list={['shell', { 'sin-nav': !nav }]}>
+    <main class:list={['shell', { 'sin-nav': !nav, ancho: ancho === 'ancho' }]}>
       <slot />
     </main>
     {nav && (
-      <nav class="bottom-nav">
+      <nav class="bottom-nav" aria-label="Principal">
+        <span class="rail-logo" aria-hidden="true"><Icon nombre="dumbbell" /></span>
         <a href="/rutinas" class={nav === 'rutinas' ? 'active' : ''}>
           <Icon nombre="dumbbell" />
           Rutinas

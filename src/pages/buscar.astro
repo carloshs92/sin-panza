@@ -3,11 +3,11 @@ import Base from '../layouts/Base.astro';
 import TopBar from '../components/TopBar.astro';
 import Icon from '../components/Icon.astro';
 ---
-<Base title="Buscar ejercicio">
-  <div id="buscador" class="stack">
+<Base title="Buscar ejercicio" ancho="ancho">
+  <div id="buscador" class="buscador">
     <TopBar volver="/rutinas" volverId="btnVolver" titulo="Elegir ejercicio" tituloId="bTitulo" subId="bSub" />
 
-    <div class="filtros">
+    <aside class="filtros">
       <label class="campo-icono">
         <Icon nombre="search" />
         <input type="search" id="q" class="input" placeholder="Buscar por nombre o músculo…" autocomplete="off" aria-label="Buscar ejercicio" />
@@ -17,18 +17,38 @@ import Icon from '../components/Icon.astro';
         <input type="checkbox" id="soloMio" checked />
         <span>Solo lo que puedo hacer con mi equipo</span>
       </label>
-    </div>
+    </aside>
 
-    <p class="muted conteo" id="conteo" aria-live="polite">—</p>
-
-    <div class="resultados" id="resultados"></div>
-    <div id="centinela"></div>
-    <p class="muted fin-lista oculto" id="finLista">— fin de los resultados —</p>
+    <section class="col-resultados">
+      <p class="muted conteo" id="conteo" aria-live="polite">—</p>
+      <div class="resultados" id="resultados"></div>
+      <div id="centinela"></div>
+      <p class="muted fin-lista oculto" id="finLista">— fin de los resultados —</p>
+    </section>
   </div>
 </Base>
 
 <style>
+  /* Móvil: todo en una columna. ≥ 900: filtros en una barra lateral fija y
+     resultados en rejilla. */
+  /* minmax(0, 1fr): sin él, los textos nowrap ensanchan la columna implícita */
+  .buscador { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-4); }
   .filtros { display: flex; flex-direction: column; gap: var(--s-3); }
+  .col-resultados { display: flex; flex-direction: column; gap: var(--s-3); min-width: 0; }
+
+  @media (min-width: 900px) {
+    .buscador {
+      grid-template-columns: 280px minmax(0, 1fr);
+      grid-template-areas: 'top top' 'filtros resultados';
+      column-gap: var(--s-6);
+      align-items: start;
+    }
+    .buscador > :global(.topbar) { grid-area: top; }
+    .filtros { grid-area: filtros; position: sticky; top: var(--shell-top); }
+    .col-resultados { grid-area: resultados; }
+    /* En la barra lateral hay sitio: las zonas se envuelven en vez de deslizar */
+    .filtros .carrusel { flex-wrap: wrap; overflow: visible; margin-inline: 0; padding-inline: 0; }
+  }
   /* Las zonas se deslizan en una fila: con 8 chips, envolver ocupaba media pantalla */
   .carrusel { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: calc(-1 * var(--s-4)); padding-inline: var(--s-4); }
   .carrusel::-webkit-scrollbar { display: none; }
@@ -36,7 +56,10 @@ import Icon from '../components/Icon.astro';
 
   .conteo { font-size: var(--t-sm); }
 
-  .resultados { display: flex; flex-direction: column; gap: var(--s-2); }
+  .resultados { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-2); }
+  @media (min-width: 600px) {
+    .resultados { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+  }
   .resultados :global(.res) {
     display: flex; align-items: center; gap: var(--s-3);
     width: 100%; padding: var(--s-3);
@@ -59,6 +82,7 @@ import Icon from '../components/Icon.astro';
   .resultados :global(.flecha) { flex-shrink: 0; font-size: var(--t-lg); color: var(--fg-subtle); }
 
   .fin-lista, .resultados :global(.vacio) { padding: var(--s-5); text-align: center; font-size: var(--t-sm); }
+  .resultados :global(.vacio) { grid-column: 1 / -1; }
   #centinela { height: 1px; }
 </style>
 
