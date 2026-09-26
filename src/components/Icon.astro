@@ -1,0 +1,10 @@
+---
+import { icono } from '../lib/iconos.js';
+
+interface Props {
+  nombre: string;
+  clase?: string;
+}
+const { nombre, clase = '' } = Astro.props;
+---
+<Fragment set:html={icono(nombre, clase)} />

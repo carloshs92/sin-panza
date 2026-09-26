@@ -1,3 +1,5 @@
+import { icono } from './iconos.js';
+
 // Comportamiento compartido de los componentes de interfaz.
 
 // Conecta un <Stepper>: limita al rango, deshabilita los extremos y avisa de
@@ -29,12 +31,13 @@ export function conectarStepper(el, { min, max, valor, onCambio }) {
 
 // Aviso breve abajo de la pantalla («Guardado»). Reemplaza al anterior.
 let toastActual = null;
-export function toast(texto, ms = 1600) {
+export function toast(texto, { icono: nombre = 'check', ms = 1600 } = {}) {
   toastActual?.remove();
   const el = document.createElement('div');
   el.className = 'toast';
   el.setAttribute('role', 'status');
-  el.textContent = texto;
+  el.innerHTML = icono(nombre);
+  el.append(texto);
   document.body.appendChild(el);
   toastActual = el;
   setTimeout(() => {

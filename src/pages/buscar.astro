@@ -1,13 +1,17 @@
 ---
 import Base from '../layouts/Base.astro';
 import TopBar from '../components/TopBar.astro';
+import Icon from '../components/Icon.astro';
 ---
 <Base title="Buscar ejercicio">
   <div id="buscador" class="stack">
     <TopBar volver="/rutinas" volverId="btnVolver" titulo="Elegir ejercicio" tituloId="bTitulo" subId="bSub" />
 
     <div class="filtros">
-      <input type="search" id="q" class="input" placeholder="🔍 Buscar por nombre o músculo…" autocomplete="off" aria-label="Buscar ejercicio" />
+      <label class="campo-icono">
+        <Icon nombre="search" />
+        <input type="search" id="q" class="input" placeholder="Buscar por nombre o músculo…" autocomplete="off" aria-label="Buscar ejercicio" />
+      </label>
       <div class="chips carrusel" id="catChips"></div>
       <label class="switch">
         <input type="checkbox" id="soloMio" checked />
@@ -63,6 +67,7 @@ import TopBar from '../components/TopBar.astro';
   import { cargarEjercicios, equipoPermitido, estructurasPermitidas } from '../lib/plan.js';
   import { mediaUrl, precargar } from '../lib/media.js';
   import { musculo, equipamiento } from '../lib/textos.js';
+  import { icono } from '../lib/iconos.js';
   import { marcarChip } from '../lib/ui.js';
   import { navigate } from 'astro:transitions/client';
 
@@ -109,7 +114,7 @@ import TopBar from '../components/TopBar.astro';
       const b = document.createElement('button');
       b.className = 'chip';
       marcarChip(b, false);
-      b.textContent = `${c.emoji} ${c.label}`;
+      b.textContent = c.label;
       b.addEventListener('click', () => {
         categoria = categoria === c.id ? null : c.id;
         catBox.querySelectorAll('.chip').forEach((x) => marcarChip(x, x === b && !!categoria));
@@ -173,9 +178,9 @@ import TopBar from '../components/TopBar.astro';
               <span class="tag">${equipamiento(e.equipment)}</span>
               ${e.req ? `<span class="tag">necesita ${e.req === 'barra' ? 'barra' : 'banco'}</span>` : ''}
             </div>
-            ${enRutina.has(e.id) ? '<span class="ya">✓ ya está en esta rutina</span>' : ''}
+            ${enRutina.has(e.id) ? `<span class="ya con-icono">${icono('check')} ya está en esta rutina</span>` : ''}
           </div>
-          <span class="flecha">›</span>
+          <span class="flecha">${icono('chevron-right')}</span>
         </button>`
         )
         .join('');

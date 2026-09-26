@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import TopBar from '../components/TopBar.astro';
+import Icon from '../components/Icon.astro';
 ---
 <Base title="Editar rutina">
   <div id="editor" class="stack">
@@ -8,8 +9,8 @@ import TopBar from '../components/TopBar.astro';
 
     <ol class="lista" id="listaEx"></ol>
 
-    <a class="btn btn-secondary" id="btnAnadir" href="#">➕ Añadir ejercicio</a>
-    <a class="btn" id="btnEntrenar" href="#">▶ Entrenar este día</a>
+    <a class="btn btn-secondary" id="btnAnadir" href="#"><Icon nombre="plus" /> Añadir ejercicio</a>
+    <a class="btn" id="btnEntrenar" href="#"><Icon nombre="play" /> Entrenar este día</a>
   </div>
 </Base>
 
@@ -43,6 +44,7 @@ import TopBar from '../components/TopBar.astro';
   import { mediaUrl, precargar } from '../lib/media.js';
   import { duracionEstimadaMin } from '../lib/plan.js';
   import { musculo, equipamiento } from '../lib/textos.js';
+  import { icono } from '../lib/iconos.js';
   import { navigate } from 'astro:transitions/client';
 
   document.addEventListener('astro:page-load', () => {
@@ -89,10 +91,10 @@ import TopBar from '../components/TopBar.astro';
             <div class="ex-meta">${musculo(e.target)} · ${equipamiento(e.equipment)}</div>
           </div>
           <div class="ex-btns">
-            <button class="icon-btn" data-accion="subir" data-i="${i}" ${i === 0 ? 'disabled' : ''} aria-label="Subir">↑</button>
-            <button class="icon-btn" data-accion="bajar" data-i="${i}" ${i === ejercicios.length - 1 ? 'disabled' : ''} aria-label="Bajar">↓</button>
-            <button class="icon-btn" data-accion="cambiar" data-i="${i}" aria-label="Cambiar ejercicio">⇄</button>
-            <button class="icon-btn quitar" data-accion="quitar" data-i="${i}" aria-label="Quitar">✕</button>
+            <button class="icon-btn" data-accion="subir" data-i="${i}" ${i === 0 ? 'disabled' : ''} aria-label="Subir">${icono('arrow-up')}</button>
+            <button class="icon-btn" data-accion="bajar" data-i="${i}" ${i === ejercicios.length - 1 ? 'disabled' : ''} aria-label="Bajar">${icono('arrow-down')}</button>
+            <button class="icon-btn" data-accion="cambiar" data-i="${i}" aria-label="Cambiar ejercicio">${icono('arrow-left-right')}</button>
+            <button class="icon-btn quitar" data-accion="quitar" data-i="${i}" aria-label="Quitar">${icono('trash')}</button>
           </div>
         </li>`
         )

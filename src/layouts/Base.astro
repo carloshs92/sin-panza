@@ -1,6 +1,8 @@
 ---
 import { ClientRouter } from 'astro:transitions';
 import '../styles/global.css';
+import IconSprite from '../components/IconSprite.astro';
+import Icon from '../components/Icon.astro';
 
 interface Props {
   title: string;
@@ -62,6 +64,7 @@ const { title, nav = null } = Astro.props;
     <ClientRouter />
   </head>
   <body>
+    <IconSprite />
     {/* Splash propio (Android/escritorio, y relevo del de iOS). transition:persist
         evita que se repita en cada navegación; se oculta solo con CSS. */}
     <div id="splash" transition:persist>
@@ -70,18 +73,18 @@ const { title, nav = null } = Astro.props;
       </div>
       <b>Sin<i>Panza</i></b>
     </div>
-    <div id="sinRed" class="sin-red oculto">📴 Sin conexión — usando lo que tienes guardado</div>
+    <div id="sinRed" class="sin-red oculto" role="status"><Icon nombre="wifi-off" /> Sin conexión — usando lo que tienes guardado</div>
     <main class="shell">
       <slot />
     </main>
     {nav && (
       <nav class="bottom-nav">
         <a href="/rutinas" class={nav === 'rutinas' ? 'active' : ''}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6.5 6.5v11M17.5 6.5v11M2 9.5v5M22 9.5v5M6.5 12h11"/></svg>
+          <Icon nombre="dumbbell" />
           Rutinas
         </a>
         <a href="/ajustes" class={nav === 'ajustes' ? 'active' : ''}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <Icon nombre="settings" />
           Ajustes
         </a>
       </nav>

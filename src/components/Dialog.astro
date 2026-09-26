@@ -1,16 +1,19 @@
 ---
 // Diálogo modal sobre <dialog> nativo: foco atrapado, Escape y fondo gratis.
 // Se abre con el.showModal() y se cierra con el.close().
+import Icon from './Icon.astro';
+
 interface Props {
   id: string;
-  emoji: string;
+  icono: string;
+  tono?: 'neutro' | 'peligro';
   titulo: string;
 }
-const { id, emoji, titulo } = Astro.props;
+const { id, icono, tono = 'neutro', titulo } = Astro.props;
 ---
 <dialog class="dialog" id={id} aria-labelledby={`${id}-titulo`}>
   <div class="dialog-cuerpo">
-    <div class="dialog-emoji" aria-hidden="true">{emoji}</div>
+    <div class={`dialog-icono ${tono}`}><Icon nombre={icono} /></div>
     <h2 id={`${id}-titulo`}>{titulo}</h2>
     <slot />
     <div class="dialog-acciones">

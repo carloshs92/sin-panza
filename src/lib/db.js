@@ -108,27 +108,27 @@ export const DIAS = [
 ];
 
 export const CATEGORIAS = [
-  { id: 'waist', label: 'Abdomen', emoji: '🔥' },
-  { id: 'cardio', label: 'Cardio', emoji: '❤️' },
-  { id: 'chest', label: 'Pecho', emoji: '💪' },
-  { id: 'back', label: 'Espalda', emoji: '🦾' },
-  { id: 'shoulders', label: 'Hombros', emoji: '🏋️' },
-  { id: 'upper arms', label: 'Brazos', emoji: '💥' },
-  { id: 'upper legs', label: 'Piernas', emoji: '🦵' },
-  { id: 'lower legs', label: 'Pantorrillas', emoji: '🦶' },
+  { id: 'waist', label: 'Abdomen' },
+  { id: 'cardio', label: 'Cardio' },
+  { id: 'chest', label: 'Pecho' },
+  { id: 'back', label: 'Espalda' },
+  { id: 'shoulders', label: 'Hombros' },
+  { id: 'upper arms', label: 'Brazos' },
+  { id: 'upper legs', label: 'Piernas' },
+  { id: 'lower legs', label: 'Pantorrillas' },
 ];
 
 export const IDIOMAS = [
-  { id: 'es', label: 'Español', emoji: '🇪🇸' },
-  { id: 'en', label: 'English', emoji: '🇬🇧' },
-  { id: 'fr', label: 'Français', emoji: '🇫🇷' },
-  { id: 'it', label: 'Italiano', emoji: '🇮🇹' },
-  { id: 'pl', label: 'Polski', emoji: '🇵🇱' },
-  { id: 'tr', label: 'Türkçe', emoji: '🇹🇷' },
-  { id: 'ru', label: 'Русский', emoji: '🇷🇺' },
-  { id: 'zh', label: '中文', emoji: '🇨🇳' },
-  { id: 'hi', label: 'हिन्दी', emoji: '🇮🇳' },
-  { id: 'ko', label: '한국어', emoji: '🇰🇷' },
+  { id: 'es', label: 'Español' },
+  { id: 'en', label: 'English' },
+  { id: 'fr', label: 'Français' },
+  { id: 'it', label: 'Italiano' },
+  { id: 'pl', label: 'Polski' },
+  { id: 'tr', label: 'Türkçe' },
+  { id: 'ru', label: 'Русский' },
+  { id: 'zh', label: '中文' },
+  { id: 'hi', label: 'हिन्दी' },
+  { id: 'ko', label: '한국어' },
 ];
 
 // Dónde y con qué entrena: cada opción habilita equipamiento del dataset.
@@ -136,14 +136,14 @@ export const IDIOMAS = [
 // «req» habilita ejercicios de peso corporal que necesitan una estructura
 // (dominadas → barra fija, banco → banco/silla/apoyo elevado).
 export const EQUIPOS = [
-  { id: 'cuerpo', label: 'Solo mi cuerpo', emoji: '🧍', equip: ['body weight'] },
-  { id: 'dominadas', label: 'Barra de dominadas', emoji: '🚪', equip: [], req: 'barra' },
-  { id: 'banco', label: 'Banco o silla firme', emoji: '🪑', equip: [], req: 'banco' },
-  { id: 'mancuernas', label: 'Mancuernas', emoji: '🏋️', equip: ['dumbbell'] },
-  { id: 'bandas', label: 'Bandas elásticas', emoji: '🪢', equip: ['band', 'resistance band'] },
-  { id: 'kettlebell', label: 'Kettlebell', emoji: '🔔', equip: ['kettlebell'] },
-  { id: 'barra', label: 'Barra y discos', emoji: '🛠️', equip: ['barbell', 'ez barbell', 'olympic barbell', 'trap bar'] },
-  { id: 'gym', label: 'Gym con máquinas', emoji: '🏢', equip: '*' },
+  { id: 'cuerpo', label: 'Solo mi cuerpo', equip: ['body weight'] },
+  { id: 'dominadas', label: 'Barra de dominadas', equip: [], req: 'barra' },
+  { id: 'banco', label: 'Banco o silla firme', equip: [], req: 'banco' },
+  { id: 'mancuernas', label: 'Mancuernas', equip: ['dumbbell'] },
+  { id: 'bandas', label: 'Bandas elásticas', equip: ['band', 'resistance band'] },
+  { id: 'kettlebell', label: 'Kettlebell', equip: ['kettlebell'] },
+  { id: 'barra', label: 'Barra y discos', equip: ['barbell', 'ez barbell', 'olympic barbell', 'trap bar'] },
+  { id: 'gym', label: 'Gym con máquinas', equip: '*' },
 ];
 
 const ORDEN_JS = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];

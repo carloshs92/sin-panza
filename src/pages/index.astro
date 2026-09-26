@@ -1,5 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
 ---
 <Base title="Bienvenido">
   <div id="onboarding">
@@ -11,7 +12,7 @@ import Base from '../layouts/Base.astro';
     <!-- Paso 0: bienvenida -->
     <section class="paso activa" data-paso="0">
       <div class="hero">
-        <div class="hero-emoji">🏃</div>
+        <div class="splash-logo hero-logo" aria-hidden="true"><span></span><span></span><span></span></div>
         <h1>Tu entrenador<br />personal de bolsillo</h1>
         <p class="muted">Rutinas a tu medida, guiadas por voz y pensadas para los minutos que sí tienes. Todo se guarda solo en tu dispositivo.</p>
       </div>
@@ -67,7 +68,7 @@ import Base from '../layouts/Base.astro';
       <p class="muted">Sé realista: 15 minutos constantes valen más que una hora que nunca llega.</p>
       <div class="chips" id="tiempoChips">
         <button class="chip" aria-pressed="false" data-min="10">10 min</button>
-        <button class="chip" aria-pressed="true" data-min="15">15 min ⭐</button>
+        <button class="chip" aria-pressed="true" data-min="15">15 min</button>
         <button class="chip" aria-pressed="false" data-min="20">20 min</button>
         <button class="chip" aria-pressed="false" data-min="30">30 min</button>
       </div>
@@ -79,13 +80,13 @@ import Base from '../layouts/Base.astro';
       <h2>¿Qué días entrenarás?</h2>
       <p class="muted">Crearemos una rutina distinta para cada día.</p>
       <div class="chips dias" id="diaChips"></div>
-      <button class="btn" disabled id="btnFinal">Crear mi plan 🚀</button>
+      <button class="btn" disabled id="btnFinal">Crear mi plan</button>
     </section>
 
     <!-- Paso 8: generando -->
     <section class="paso" data-paso="8">
       <div class="hero">
-        <div class="hero-emoji girando">⚙️</div>
+        <div class="hero-cargando" aria-hidden="true"><Icon nombre="loader" clase="icon-spin" /></div>
         <h2>Armando tus rutinas…</h2>
         <p class="muted">Eligiendo los mejores ejercicios para ti.</p>
       </div>
@@ -106,9 +107,8 @@ import Base from '../layouts/Base.astro';
 
   .hero { display: flex; flex-direction: column; align-items: center; gap: var(--s-3); padding: var(--s-6) 0 var(--s-2); text-align: center; }
   .hero h1 { font-size: var(--t-2xl); }
-  .hero-emoji { font-size: var(--t-display); line-height: 1; }
-  .girando { animation: girar 2.2s linear infinite; }
-  @keyframes girar { to { transform: rotate(360deg); } }
+  .hero-logo { margin-bottom: var(--s-3); animation: none; }
+  .hero-cargando { font-size: var(--t-2xl); color: var(--accent); }
 
   .edad-box { display: flex; flex-direction: column; align-items: center; gap: var(--s-4); padding: var(--s-5) 0; }
   .edad-box output { font-size: var(--t-display); font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
@@ -173,7 +173,7 @@ import Base from '../layouts/Base.astro';
       const b = document.createElement('button');
       b.className = 'chip';
       marcarChip(b, l.id === estado.idioma);
-      b.textContent = `${l.emoji} ${l.label}`;
+      b.textContent = l.label;
       b.addEventListener('click', () => {
         estado.idioma = l.id;
         idiomaBox.querySelectorAll('.chip').forEach((x) => marcarChip(x, x === b));
@@ -187,7 +187,7 @@ import Base from '../layouts/Base.astro';
       const b = document.createElement('button');
       b.className = 'chip';
       marcarChip(b, estado.equipo.has(e.id));
-      b.textContent = `${e.emoji} ${e.label}`;
+      b.textContent = e.label;
       b.addEventListener('click', () => {
         estado.equipo.has(e.id) ? estado.equipo.delete(e.id) : estado.equipo.add(e.id);
         marcarChip(b, estado.equipo.has(e.id));
@@ -215,7 +215,7 @@ import Base from '../layouts/Base.astro';
       const b = document.createElement('button');
       b.className = 'chip';
       marcarChip(b, false);
-      b.textContent = `${c.emoji} ${c.label}`;
+      b.textContent = c.label;
       b.addEventListener('click', () => {
         estado.categorias.has(c.id) ? estado.categorias.delete(c.id) : estado.categorias.add(c.id);
         marcarChip(b, estado.categorias.has(c.id));

@@ -2,6 +2,8 @@
 // Cabecera de las pantallas secundarias: volver + título + subtítulo.
 // Título y subtítulo suelen rellenarse desde el script de la página, por eso
 // aceptan ids además de texto.
+import Icon from './Icon.astro';
+
 interface Props {
   volver: string;
   volverId?: string;
@@ -12,7 +14,7 @@ interface Props {
 const { volver, volverId, titulo = '—', tituloId, subId } = Astro.props;
 ---
 <header class="topbar">
-  <a href={volver} id={volverId} class="icon-btn" aria-label="Volver">←</a>
+  <a href={volver} id={volverId} class="icon-btn" aria-label="Volver"><Icon nombre="arrow-left" /></a>
   <div class="topbar-texto">
     <h1 class="topbar-titulo" id={tituloId}>{titulo}</h1>
     {subId && <span class="topbar-sub" id={subId}></span>}

@@ -1,5 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
 ---
 <Base title="Mis rutinas" nav="rutinas">
   <div id="rutinas" class="stack">
@@ -13,9 +14,9 @@ import Base from '../layouts/Base.astro';
 
     <!-- Estadísticas -->
     <div class="stats">
-      <div class="stat card"><b id="stRacha">0</b><span>🔥 racha</span></div>
-      <div class="stat card"><b id="stMes">0</b><span>📅 este mes</span></div>
-      <div class="stat card"><b id="stTotal">0</b><span>✅ total</span></div>
+      <div class="stat card"><b id="stRacha">0</b><span class="con-icono"><Icon nombre="flame" />racha</span></div>
+      <div class="stat card"><b id="stMes">0</b><span class="con-icono"><Icon nombre="calendar" />este mes</span></div>
+      <div class="stat card"><b id="stTotal">0</b><span class="con-icono"><Icon nombre="circle-check" />total</span></div>
     </div>
 
     <!-- Calendario del mes -->
@@ -52,7 +53,7 @@ import Base from '../layouts/Base.astro';
   .hoy-card:active { transform: scale(0.98); }
   .hoy-card.pendiente { background: var(--accent); border-color: transparent; color: var(--accent-fg); }
   .hoy-card.cumplido { background: var(--success-soft); border-color: var(--success); }
-  .hoy-card :global(.hc-titulo) { font-size: var(--t-lg); font-weight: 700; }
+  .hoy-card :global(.hc-titulo) { display: flex; align-items: center; gap: var(--s-2); font-size: var(--t-lg); font-weight: 700; }
   .hoy-card :global(.hc-sub) { margin-top: var(--s-1); font-size: var(--t-sm); color: var(--fg-muted); }
   .hoy-card.pendiente :global(.hc-sub) { color: inherit; opacity: 0.85; }
 
@@ -60,7 +61,7 @@ import Base from '../layouts/Base.astro';
   .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-2); }
   .stat { display: flex; flex-direction: column; align-items: center; gap: var(--s-1); padding: var(--s-3) var(--s-2); text-align: center; }
   .stat b { font-size: var(--t-xl); line-height: 1; font-variant-numeric: tabular-nums; }
-  .stat span { font-size: var(--t-xs); color: var(--fg-muted); }
+  .stat span { gap: var(--s-1); font-size: var(--t-xs); color: var(--fg-muted); }
 
   /* ---- calendario ---- */
   .cal-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: var(--s-2); margin-bottom: var(--s-3); }
@@ -133,6 +134,7 @@ import Base from '../layouts/Base.astro';
   import { mediaUrl, precargar } from '../lib/media.js';
   import { duracionEstimadaMin } from '../lib/plan.js';
   import { escapar, mayusInicial } from '../lib/textos.js';
+  import { icono } from '../lib/iconos.js';
   import { navigate } from 'astro:transitions/client';
 
   document.addEventListener('astro:page-load', () => {
@@ -171,18 +173,18 @@ import Base from '../layouts/Base.astro';
     if (cumplidoHoy) {
       hoyCard.className = 'hoy-card cumplido';
       hoyCard.href = '/rutinas';
-      hoyCard.innerHTML = `<div class="hc-titulo">🏆 ¡Objetivo de hoy cumplido!</div>
+      hoyCard.innerHTML = `<div class="hc-titulo">${icono('trophy')} ¡Objetivo de hoy cumplido!</div>
         <div class="hc-sub">Ya entrenaste hoy${nombre ? `, ${nombre}` : ''}. Descansa o repite si te sobran ganas 💪</div>`;
     } else if (programadoHoy) {
       const n = (rutinas[hoy] || []).length;
       hoyCard.className = 'hoy-card pendiente';
       hoyCard.href = `/entrenar?dia=${hoy}`;
-      hoyCard.innerHTML = `<div class="hc-titulo">▶ Hoy toca entrenar</div>
+      hoyCard.innerHTML = `<div class="hc-titulo">${icono('play')} Hoy toca entrenar</div>
         <div class="hc-sub">${n} ejercicios · ~${duracionEstimadaMin(n, settings)} min con descansos. ¡Dale!</div>`;
     } else {
       hoyCard.className = 'hoy-card';
       hoyCard.href = '/rutinas';
-      hoyCard.innerHTML = `<div class="hc-titulo">😌 Hoy es día de descanso</div>
+      hoyCard.innerHTML = `<div class="hc-titulo">${icono('moon')} Hoy es día de descanso</div>
         <div class="hc-sub">Tu próximo entrenamiento aparece abajo. ¿Ganas extra? Toca cualquier rutina.</div>`;
     }
 
@@ -252,9 +254,9 @@ import Base from '../layouts/Base.astro';
             <span class="dia-meta">${ejercicios.length} ejercicios · ~${totalMin} min</span>
           </div>
           <div class="thumbs">${thumbs}${extra}</div>
-          ${hechoHoy ? '<div class="hecho-hoy">✓ Completado hoy</div>' : ''}
+          ${hechoHoy ? `<div class="hecho-hoy con-icono">${icono('circle-check')} Completado hoy</div>` : ''}
         </a>
-        <a class="dia-editar" href="/editar?dia=${diaId}">✏️ Editar rutina</a>
+        <a class="dia-editar con-icono" href="/editar?dia=${diaId}">${icono('pencil')} Editar rutina</a>
       `;
       lista.appendChild(card);
     });

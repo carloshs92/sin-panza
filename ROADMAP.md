@@ -67,16 +67,22 @@ Estado: `[ ]` pendiente · `[~]` en curso · `[x]` hecho
   - ✅ Verificado: ningún `font-size`/`border-radius`/color literal en
     `src/pages` ni `src/components`.
 
-- [ ] **0.4 · Iconos SVG en los controles** · S
-  Sprite de ~20 iconos (estilo Lucide). Emojis solo como contenido
-  (celebraciones), nunca en botones ni etiquetas.
+- [x] **0.4 · Iconos SVG en los controles** · S
+  Sprite de 34 iconos Lucide (ISC) en `lib/iconos.js`, dibujado una vez en
+  `Base.astro` y usado con `<Icon>` o `icono()` desde las plantillas JS.
+  - Emojis solo como contenido: saludo, 😄, 💪 y el 🏆/🔥 del final.
+  - Chips de zona, equipo e idioma, solo texto; campos `emoji` fuera de
+    `db.js`.
+  - Diálogos con icono en círculo (tono neutro o peligro); toast con check.
+  - Portada del onboarding con la mancuerna de la marca; cargando con spinner.
 
 - [ ] **0.5 · Rediseño de Entrenar** · M · _depende de 0.3_
   Hoy, a 375×667, el botón «Empezar» queda bajo el pliegue.
   - Barra de acción fija abajo (Empezar + micrófono) respetando safe areas.
   - GIF con `aspect-ratio` y `max-height: 34svh`, en marco neutro (no blanco
     puro sobre fondo oscuro).
-  - Minutos/series y «Cómo se hace» pasan a `Sheet`.
+  - Minutos/series y «Cómo se hace» pasan a `Sheet` (con steppers de 44 px
+    ya no caben lado a lado en la tarjeta actual).
   - Timer con `min(70vmin, 420px)` y cifras de tamaño display (adelanta el
     modo «teléfono lejos»).
   - Horizontal: GIF a la izquierda, timer a la derecha. Quitar
@@ -264,4 +270,4 @@ subir una serie no necesita un modelo de lenguaje, necesita recordar cómo te fu
 3. Un commit por ítem, marcando aquí la casilla en el mismo commit.
 4. Si algo se descubre por el camino, se añade al roadmap en vez de improvisar.
 
-**Siguiente**: 0.4 — iconos SVG en los controles.
+**Siguiente**: 0.5 — rediseño de Entrenar.
