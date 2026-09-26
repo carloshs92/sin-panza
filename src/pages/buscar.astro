@@ -1,27 +1,21 @@
 ---
 import Base from '../layouts/Base.astro';
+import TopBar from '../components/TopBar.astro';
 ---
 <Base title="Buscar ejercicio">
-  <div id="buscador">
-    <header class="b-head">
-      <a class="volver" id="btnVolver" href="/rutinas" aria-label="Volver">←</a>
-      <div class="b-info">
-        <b id="bTitulo">Elegir ejercicio</b>
-        <span class="muted" id="bSub"></span>
-      </div>
-    </header>
-
-    <input type="search" id="q" class="input-buscar" placeholder="🔍 Buscar por nombre…" autocomplete="off" />
+  <div id="buscador" class="stack">
+    <TopBar volver="/rutinas" volverId="btnVolver" titulo="Elegir ejercicio" tituloId="bTitulo" subId="bSub" />
 
     <div class="filtros">
-      <div class="chips" id="catChips"></div>
+      <input type="search" id="q" class="input" placeholder="🔍 Buscar por nombre o músculo…" autocomplete="off" aria-label="Buscar ejercicio" />
+      <div class="chips carrusel" id="catChips"></div>
       <label class="switch">
         <input type="checkbox" id="soloMio" checked />
         <span>Solo lo que puedo hacer con mi equipo</span>
       </label>
     </div>
 
-    <p class="muted conteo" id="conteo">—</p>
+    <p class="muted conteo" id="conteo" aria-live="polite">—</p>
 
     <div class="resultados" id="resultados"></div>
     <div id="centinela"></div>
@@ -30,53 +24,37 @@ import Base from '../layouts/Base.astro';
 </Base>
 
 <style>
-  .b-head { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
-  .volver { font-size: 1.4rem; padding: 6px 12px; border-radius: 12px; background: var(--card); border: 1px solid var(--border); }
-  .b-info { display: flex; flex-direction: column; }
-  .b-info b { font-size: 1.15rem; }
-  .b-info span { font-size: 0.8rem; }
+  .filtros { display: flex; flex-direction: column; gap: var(--s-3); }
+  /* Las zonas se deslizan en una fila: con 8 chips, envolver ocupaba media pantalla */
+  .carrusel { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: calc(-1 * var(--s-4)); padding-inline: var(--s-4); }
+  .carrusel::-webkit-scrollbar { display: none; }
+  .carrusel :global(.chip) { flex-shrink: 0; }
 
-  .input-buscar {
-    width: 100%; padding: 15px 18px; margin-bottom: 14px;
-    font-size: 1rem; font-family: inherit; color: var(--text);
-    background: var(--card); border: 1.5px solid var(--border); border-radius: var(--radius);
-    outline: none; transition: border-color 0.2s;
-  }
-  .input-buscar:focus { border-color: var(--accent); }
+  .conteo { font-size: var(--t-sm); }
 
-  .filtros { display: flex; flex-direction: column; gap: 12px; margin-bottom: 14px; }
-  .chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
-  .chips::-webkit-scrollbar { display: none; }
-  .chips :global(.chip) { padding: 9px 15px; font-size: 0.85rem; white-space: nowrap; flex-shrink: 0; }
-
-  .switch { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--text-dim); cursor: pointer; }
-  .switch input { width: 18px; height: 18px; accent-color: var(--accent); }
-
-  .conteo { font-size: 0.8rem; margin-bottom: 10px; }
-
-  .resultados { display: flex; flex-direction: column; gap: 10px; }
+  .resultados { display: flex; flex-direction: column; gap: var(--s-2); }
   .resultados :global(.res) {
-    display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 12px;
-    transition: transform 0.15s ease, border-color 0.15s ease;
+    display: flex; align-items: center; gap: var(--s-3);
+    width: 100%; padding: var(--s-3);
+    border-radius: var(--r-lg);
+    background: var(--surface-1);
+    border: 1px solid var(--line);
+    text-align: left;
+    transition: background var(--dur-1), transform var(--dur-1) var(--ease-out);
   }
-  .resultados :global(.res:active) { transform: scale(0.98); border-color: var(--accent); }
-  .resultados :global(.res img) {
-    width: 58px; height: 58px; flex-shrink: 0;
-    border-radius: 12px; background: #fff; object-fit: contain;
-  }
-  .resultados :global(.res-datos) { flex: 1; min-width: 0; }
+  .resultados :global(.res:active) { transform: scale(0.98); }
+  @media (hover: hover) { .resultados :global(.res:hover) { background: var(--surface-2); } }
+  .resultados :global(.res .media-frame) { width: 56px; height: 56px; }
+  .resultados :global(.res-datos) { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--s-1); }
   .resultados :global(.res-datos b) {
-    display: block; font-size: 0.95rem; text-transform: capitalize;
+    font-size: var(--t-sm); text-transform: capitalize;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
-  .resultados :global(.res-tags) { display: flex; gap: 6px; margin-top: 5px; flex-wrap: wrap; }
-  .resultados :global(.ya) { font-size: 0.7rem; color: var(--green); font-weight: 700; margin-top: 4px; }
-  .resultados :global(.flecha) { color: var(--text-dim); font-size: 1.2rem; flex-shrink: 0; }
+  .resultados :global(.res-tags) { display: flex; flex-wrap: wrap; gap: var(--s-1); }
+  .resultados :global(.ya) { font-size: var(--t-xs); font-weight: 600; color: var(--success); }
+  .resultados :global(.flecha) { flex-shrink: 0; font-size: var(--t-lg); color: var(--fg-subtle); }
 
-  .fin-lista, .vacio { text-align: center; padding: 20px; font-size: 0.85rem; }
-  .oculto { display: none !important; }
+  .fin-lista, .resultados :global(.vacio) { padding: var(--s-5); text-align: center; font-size: var(--t-sm); }
   #centinela { height: 1px; }
 </style>
 
@@ -85,6 +63,7 @@ import Base from '../layouts/Base.astro';
   import { cargarEjercicios, equipoPermitido, estructurasPermitidas } from '../lib/plan.js';
   import { mediaUrl, precargar } from '../lib/media.js';
   import { musculo, equipamiento } from '../lib/textos.js';
+  import { marcarChip } from '../lib/ui.js';
   import { navigate } from 'astro:transitions/client';
 
   document.addEventListener('astro:page-load', async () => {
@@ -129,11 +108,11 @@ import Base from '../layouts/Base.astro';
     CATEGORIAS.forEach((c) => {
       const b = document.createElement('button');
       b.className = 'chip';
-      b.innerHTML = `${c.emoji} ${c.label}`;
+      marcarChip(b, false);
+      b.textContent = `${c.emoji} ${c.label}`;
       b.addEventListener('click', () => {
         categoria = categoria === c.id ? null : c.id;
-        catBox.querySelectorAll('.chip').forEach((x) => x.classList.remove('on'));
-        if (categoria) b.classList.add('on');
+        catBox.querySelectorAll('.chip').forEach((x) => marcarChip(x, x === b && !!categoria));
         filtrar();
       });
       catBox.appendChild(b);
@@ -186,15 +165,15 @@ import Base from '../layouts/Base.astro';
         .map(
           (e) => `
         <button class="res" data-id="${e.id}">
-          <img src="${mediaUrl(e.image)}" alt="" loading="lazy" decoding="async" />
+          <div class="media-frame"><img src="${mediaUrl(e.image)}" alt="" loading="lazy" decoding="async" /></div>
           <div class="res-datos">
             <b>${e.name}</b>
             <div class="res-tags">
-              <span class="tag accent">${musculo(e.target)}</span>
-              <span class="tag blue">${equipamiento(e.equipment)}</span>
-              ${e.req ? `<span class="tag green">${e.req === 'barra' ? 'barra' : 'banco'}</span>` : ''}
+              <span class="tag">${musculo(e.target)}</span>
+              <span class="tag">${equipamiento(e.equipment)}</span>
+              ${e.req ? `<span class="tag">necesita ${e.req === 'barra' ? 'barra' : 'banco'}</span>` : ''}
             </div>
-            ${enRutina.has(e.id) ? '<div class="ya">✓ ya está en esta rutina</div>' : ''}
+            ${enRutina.has(e.id) ? '<span class="ya">✓ ya está en esta rutina</span>' : ''}
           </div>
           <span class="flecha">›</span>
         </button>`

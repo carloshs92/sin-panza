@@ -1,0 +1,13 @@
+---
+// − valor +. El comportamiento lo pone conectarStepper() de lib/ui.js.
+interface Props {
+  id: string;
+  etiqueta: string;
+}
+const { id, etiqueta } = Astro.props;
+---
+<div class="stepper" id={id} role="group" aria-label={etiqueta}>
+  <button type="button" data-paso="-1" aria-label={`Menos ${etiqueta.toLowerCase()}`}>−</button>
+  <output aria-live="polite">—</output>
+  <button type="button" data-paso="1" aria-label={`Más ${etiqueta.toLowerCase()}`}>+</button>
+</div>

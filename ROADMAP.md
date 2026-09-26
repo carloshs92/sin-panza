@@ -45,23 +45,27 @@ Estado: `[ ]` pendiente · `[~]` en curso · `[x]` hecho
   - Para añadir una: subir `VERSION_DATOS` y escribir `MIGRACIONES[n]`.
   - ✅ *Listo cuando*: un perfil sin `sp.version` se migra solo y queda marcado.
 
-- [ ] **0.3 · Tokens de diseño + componentes base** · M
-  - Tokens en `global.css`: espaciado base 4 (`--s-1…7`), 6 tamaños de letra
-    fluidos con `clamp()`, 3 radios, color **semántico** (`--surface-0…3`,
-    `--fg`, `--fg-muted`, `--line`, `--accent`, `--success`, `--warning`,
-    `--danger`, `--focus`), duraciones y curvas, `--tap: 44px`.
-  - `src/components/`: `TopBar`, `Button`, `IconButton`, `Chip` (con
-    `aria-pressed`), `Tag` (solo lectura, distinguible de lo pulsable),
-    `Stepper`, `Card`, `Sheet`, `Dialog` (`<dialog>` nativo), `Toast`, `Icon`.
-  - Fuera los duplicados (`.volver`, `.modal`, `.peligro-btn`, `.oculto`) y los
-    colores sueltos (`#ff8c38`, `#d92d20`, `#ff6b5e`…).
-  - Un solo acento por pantalla (el CTA). Días fallados en neutro, no en rojo.
-  - `:focus-visible` global; nada de `outline: none`.
-  - Sin animación `rise` al navegar: ya hay View Transitions.
-  - Ajustes con `Stepper` (no `input type=number`) y guardado al instante,
-    como el editor.
-  - ✅ *Listo cuando*: `grep` de `font-size`/`border-radius` con valores
-    literales en `src/pages` no devuelve nada.
+- [x] **0.3 · Tokens de diseño + componentes base** · M
+  - Tokens en `global.css`: espaciado base 4 (`--s-1…7`), 7 tamaños de letra
+    (los grandes fluidos con `clamp()`), 4 radios (`--r-sm/md/lg/full`), color
+    **semántico** (`--surface-0…3`, `--fg*`, `--line*`, `--accent`,
+    `--success`, `--warning`, `--danger`, `--focus`, `--media-bg`),
+    duraciones y curvas, `--tap: 44px`.
+  - Capa de componentes CSS (sirve también a las listas pintadas desde JS):
+    `.btn` (+ `-secondary`, `-ghost`, `-danger`, `-sm`), `.icon-btn`, `.chip`
+    con `aria-pressed`, `.tag` rectangular de solo lectura, `.card`,
+    `.media-frame` (fondo papel en vez de blanco puro), `.input`, `.switch`,
+    `.stepper`, `.progress`, `.topbar`, `.dialog`, `.toast`.
+  - Astro: `TopBar`, `Dialog` (`<dialog>` nativo: foco atrapado, Escape) y
+    `Stepper`; `lib/ui.js` con `conectarStepper()`, `toast()`, `marcarChip()`.
+  - Acento solo para acción principal, selección y progreso. Días fallados en
+    neutro; estadísticas en blanco.
+  - `:focus-visible` global, `prefers-reduced-motion` en todo, sin `rise` al
+    navegar ni resplandor naranja de fondo.
+  - Ajustes con steppers y guardado al instante (+ aviso «Guardado»).
+  - `Sheet` pasa a 0.5 (donde se usa) e `Icon` a 0.4.
+  - ✅ Verificado: ningún `font-size`/`border-radius`/color literal en
+    `src/pages` ni `src/components`.
 
 - [ ] **0.4 · Iconos SVG en los controles** · S
   Sprite de ~20 iconos (estilo Lucide). Emojis solo como contenido
@@ -98,6 +102,13 @@ Estado: `[ ]` pendiente · `[~]` en curso · `[x]` hecho
 
 - [ ] **0.7 · Tests de la lógica** · S
   Vitest para `plan.js` y `calcularRacha`. Las fases 2 y 5 son pura lógica.
+
+- [ ] **0.8 · «Editar mi plan» conserva lo elegido** · S
+  Al repetir el onboarding, zonas, equipo, días y tiempo arrancan vacíos (solo
+  se recuperan nombre, idioma y edad): si continúas sin volver a marcarlos,
+  pierdes tu equipo. Deben precargarse del perfil.
+  - ✅ *Listo cuando*: entrar en «Editar mi plan» y avanzar sin tocar nada deja
+    el perfil exactamente igual.
 
 ---
 
@@ -253,4 +264,4 @@ subir una serie no necesita un modelo de lenguaje, necesita recordar cómo te fu
 3. Un commit por ítem, marcando aquí la casilla en el mismo commit.
 4. Si algo se descubre por el camino, se añade al roadmap en vez de improvisar.
 
-**Siguiente**: 0.3 — tokens de diseño + componentes base.
+**Siguiente**: 0.4 — iconos SVG en los controles.
