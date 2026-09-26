@@ -129,12 +129,17 @@ Estado: `[ ]` pendiente · `[~]` en curso · `[x]` hecho
     descartaba justo lo que tu equipo permite (dominadas, mancuernas). Con el
     catálogo actual casi no se daba; eliminado.
 
-- [ ] **0.8 · «Editar mi plan» conserva lo elegido** · S
-  Al repetir el onboarding, zonas, equipo, días y tiempo arrancan vacíos (solo
-  se recuperan nombre, idioma y edad): si continúas sin volver a marcarlos,
-  pierdes tu equipo. Deben precargarse del perfil.
-  - ✅ *Listo cuando*: entrar en «Editar mi plan» y avanzar sin tocar nada deja
-    el perfil exactamente igual.
+- [x] **0.8 · «Editar mi plan» conserva lo elegido** · S
+  Lógica en `lib/perfil.js` (con 17 tests en `tests/perfil.test.js`).
+  - El onboarding parte del perfil: zonas, equipo, tiempo y días ya marcados.
+  - Además, terminar ya no regenera siempre las rutinas (se perdían los
+    cambios del editor). Según lo que cambie:
+    - zonas, equipo, tiempo o días → se regeneran, **avisando antes** en el
+      último paso («Guardar y rehacer rutinas»);
+    - solo el idioma → mismos ejercicios y orden, instrucciones traducidas;
+    - nombre, edad o nada → rutinas intactas.
+  - ✅ Verificado en el navegador: avanzar sin tocar nada deja perfil y
+    rutinas byte a byte iguales.
 
 ---
 
@@ -290,4 +295,4 @@ subir una serie no necesita un modelo de lenguaje, necesita recordar cómo te fu
 3. Un commit por ítem, marcando aquí la casilla en el mismo commit.
 4. Si algo se descubre por el camino, se añade al roadmap en vez de improvisar.
 
-**Siguiente**: 0.8 — «Editar mi plan» conserva lo elegido.
+**Siguiente**: 1.1 — exportar e importar JSON (la fase 0 está completa).

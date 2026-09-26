@@ -80,6 +80,7 @@ import Icon from '../components/Icon.astro';
       <h2>¿Qué días entrenarás?</h2>
       <p class="muted">Crearemos una rutina distinta para cada día.</p>
       <div class="chips dias" id="diaChips"></div>
+      <p class="muted nota-final" id="notaFinal" aria-live="polite"></p>
       <button class="btn" disabled id="btnFinal">Crear mi plan</button>
     </section>
 
@@ -124,12 +125,15 @@ import Icon from '../components/Icon.astro';
   input[type='range'] { width: 100%; height: var(--tap); accent-color: var(--accent); }
 
   .chips.dias { display: grid; grid-template-columns: repeat(7, 1fr); }
+  .nota-final { font-size: var(--t-sm); }
+  .nota-final:empty { display: none; }
   .chips.dias :global(.chip) { justify-content: center; aspect-ratio: 1; padding: 0; border-radius: var(--r-md); font-size: var(--t-md); }
 </style>
 
 <script>
-  import { getProfile, saveProfile, saveRoutines, getSettings, saveSettings, hayAjustesGuardados, CATEGORIAS, DIAS, IDIOMAS, EQUIPOS } from '../lib/db.js';
+  import { getProfile, saveProfile, getRoutines, saveRoutines, getSettings, saveSettings, hayAjustesGuardados, CATEGORIAS, DIAS, IDIOMAS, EQUIPOS } from '../lib/db.js';
   import { cargarEjercicios, generarRutinas, ajustesPorEdad } from '../lib/plan.js';
+  import { estadoInicial, perfilDesdeEstado, planRutinas, traducirRutinas } from '../lib/perfil.js';
   import { marcarChip } from '../lib/ui.js';
   import { navigate } from 'astro:transitions/client';
 
@@ -146,15 +150,9 @@ import Icon from '../components/Icon.astro';
       return;
     }
 
-    const estado = {
-      nombre: previo?.nombre ?? '',
-      idioma: previo?.idioma ?? 'es',
-      edad: previo?.edad ?? 30,
-      categorias: new Set(),
-      equipo: new Set(['cuerpo']),
-      tiempoMin: 15,
-      dias: new Set(),
-    };
+    // Al editar, se parte de lo que ya elegiste (antes todo arrancaba vacío)
+    const estado = estadoInicial(previo);
+    const hayRutinas = Object.keys(getRoutines()).length > 0;
     let paso = 0;
     const pasos = root.querySelectorAll('.paso');
     const barra = root.querySelector('#obProgress');
@@ -163,7 +161,21 @@ import Icon from '../components/Icon.astro';
       paso = n;
       pasos.forEach((p) => p.classList.toggle('activa', Number(p.dataset.paso) === n));
       barra.style.width = `${Math.max(5, (n / 8) * 100)}%`;
+      if (n === 7) actualizarFinal();
     };
+
+    // El último botón avisa de lo que va a pasar con tus rutinas
+    function actualizarFinal() {
+      const plan = planRutinas(previo, perfilDesdeEstado(estado, previo), hayRutinas);
+      const btn = root.querySelector('#btnFinal');
+      btn.disabled = estado.dias.size === 0;
+      btn.textContent = plan === 'crear' ? 'Crear mi plan' : plan === 'regenerar' ? 'Guardar y rehacer rutinas' : 'Guardar cambios';
+      root.querySelector('#notaFinal').textContent =
+        plan === 'regenerar' ? 'Cambiaste zonas, equipo, tiempo o días: tus rutinas se generarán de nuevo y perderás los cambios que les hiciste.'
+        : plan === 'traducir' ? 'Tus rutinas se mantienen; las instrucciones pasarán al nuevo idioma.'
+        : plan === 'mantener' ? 'Tus rutinas se mantienen tal cual.'
+        : '';
+    }
 
     root.querySelectorAll('[data-next]').forEach((b) => b.addEventListener('click', () => irA(paso + 1)));
 
@@ -223,7 +235,7 @@ import Icon from '../components/Icon.astro';
     CATEGORIAS.forEach((c) => {
       const b = document.createElement('button');
       b.className = 'chip';
-      marcarChip(b, false);
+      marcarChip(b, estado.categorias.has(c.id));
       b.textContent = c.label;
       b.addEventListener('click', () => {
         estado.categorias.has(c.id) ? estado.categorias.delete(c.id) : estado.categorias.add(c.id);
@@ -233,7 +245,10 @@ import Icon from '../components/Icon.astro';
       catBox.appendChild(b);
     });
 
+    root.querySelector('#btnCats').disabled = estado.categorias.size === 0;
+
     // Tiempo
+    root.querySelectorAll('#tiempoChips .chip').forEach((b) => marcarChip(b, Number(b.dataset.min) === estado.tiempoMin));
     root.querySelectorAll('#tiempoChips .chip').forEach((b) =>
       b.addEventListener('click', () => {
         root.querySelectorAll('#tiempoChips .chip').forEach((x) => marcarChip(x, x === b));
@@ -246,38 +261,35 @@ import Icon from '../components/Icon.astro';
     DIAS.forEach((d) => {
       const b = document.createElement('button');
       b.className = 'chip';
-      marcarChip(b, false);
+      marcarChip(b, estado.dias.has(d.id));
       b.textContent = d.corto;
       b.title = d.label;
       b.setAttribute('aria-label', d.label);
       b.addEventListener('click', () => {
         estado.dias.has(d.id) ? estado.dias.delete(d.id) : estado.dias.add(d.id);
         marcarChip(b, estado.dias.has(d.id));
-        root.querySelector('#btnFinal').disabled = estado.dias.size === 0;
+        actualizarFinal();
       });
       diaBox.appendChild(b);
     });
 
     root.querySelector('#btnFinal').addEventListener('click', async () => {
-      irA(8);
-      const perfil = {
-        nombre: estado.nombre.trim(),
-        idioma: estado.idioma,
-        edad: estado.edad,
-        categorias: [...estado.categorias],
-        equipo: [...estado.equipo],
-        tiempoMin: estado.tiempoMin,
-        dias: DIAS.map((d) => d.id).filter((id) => estado.dias.has(id)),
-        creado: previo?.creado ?? new Date().toISOString(), // conservarlo al editar el plan
-      };
+      const perfil = perfilDesdeEstado(estado, previo);
+      const plan = planRutinas(previo, perfil, hayRutinas);
       // La primera vez, la edad fija la intensidad de partida; si ya tocaste
       // los ajustes (repitiendo el onboarding), se respetan.
       if (!hayAjustesGuardados()) saveSettings(ajustesPorEdad(perfil.edad, getSettings()));
-      const ejercicios = await cargarEjercicios(perfil.idioma);
-      const rutinas = generarRutinas(perfil, ejercicios, getSettings());
+
+      if (plan === 'crear' || plan === 'regenerar') {
+        irA(8);
+        const ejercicios = await cargarEjercicios(perfil.idioma);
+        saveRoutines(generarRutinas(perfil, ejercicios, getSettings()));
+      } else if (plan === 'traducir') {
+        saveRoutines(traducirRutinas(getRoutines(), await cargarEjercicios(perfil.idioma)));
+      }
       saveProfile(perfil);
-      saveRoutines(rutinas);
-      setTimeout(() => navigate('/rutinas'), 700);
+      if (plan === 'crear' || plan === 'regenerar') setTimeout(() => navigate('/rutinas'), 700);
+      else navigate('/rutinas');
     });
   });
 </script>
