@@ -85,13 +85,9 @@ export function generarRutinas(perfil, ejercicios, settings) {
 
   const pools = {};
   for (const cat of perfil.categorias) {
-    const delCat = disponibles.filter((e) => e.category === cat);
-    // Si con el equipo elegido no alcanza, completa con peso corporal libre de esa categoría
-    pools[cat] = shuffle(
-      delCat.length >= cantidad
-        ? delCat
-        : principales.filter((e) => e.category === cat && e.equipment === 'body weight' && !e.req)
-    );
+    // Todo lo que se puede hacer con el equipo elegido. Si una zona se queda
+    // corta, el reparto de abajo completa el día con las demás zonas.
+    pools[cat] = shuffle(disponibles.filter((e) => e.category === cat));
   }
 
   const rutinas = {};

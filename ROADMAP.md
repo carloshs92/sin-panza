@@ -119,8 +119,15 @@ Estado: `[ ]` pendiente · `[~]` en curso · `[x]` hecho
     retomarán si aparece una tarjeta que viva en contenedores de distinto
     ancho.
 
-- [ ] **0.7 · Tests de la lógica** · S
-  Vitest para `plan.js` y `calcularRacha`. Las fases 2 y 5 son pura lógica.
+- [x] **0.7 · Tests de la lógica** · S
+  Vitest (`pnpm test`, carpeta `tests/`), 34 tests: duraciones, edad, filtros
+  de equipo y estiramientos, `generarRutinas` con un catálogo sintético y con
+  el real, `calcularRacha` con reloj fijo y las migraciones con un
+  `localStorage` simulado.
+  - Encontró un bug latente: cuando una zona tenía pocos ejercicios, el
+    «relleno» con peso corporal *sustituía* al pool en vez de completarlo, y
+    descartaba justo lo que tu equipo permite (dominadas, mancuernas). Con el
+    catálogo actual casi no se daba; eliminado.
 
 - [ ] **0.8 · «Editar mi plan» conserva lo elegido** · S
   Al repetir el onboarding, zonas, equipo, días y tiempo arrancan vacíos (solo
@@ -283,4 +290,4 @@ subir una serie no necesita un modelo de lenguaje, necesita recordar cómo te fu
 3. Un commit por ítem, marcando aquí la casilla en el mismo commit.
 4. Si algo se descubre por el camino, se añade al roadmap en vez de improvisar.
 
-**Siguiente**: 0.7 — tests de la lógica.
+**Siguiente**: 0.8 — «Editar mi plan» conserva lo elegido.
