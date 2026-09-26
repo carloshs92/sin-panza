@@ -9,158 +9,220 @@ Estado: `[ ]` pendiente · `[~]` en curso · `[x]` hecho
 
 ---
 
-## Fase 1 — Que la app progrese contigo 🎯
+## Fase 0 — Cimientos 🧱
 
-> **El problema**: hoy la semana 12 es idéntica a la semana 1. Mismos minutos,
-> mismas series, ejercicios al azar. El cuerpo se adapta en ~3 semanas y ahí es
-> donde se abandona. Todo esto es lógica determinista, sin backend y sin IA:
-> funciona sin conexión y no cuesta nada.
+> **El problema**: cada fase siguiente mete pantallas y datos nuevos, y hoy no
+> hay sistema de diseño (29 tamaños de letra, 10 radios, CSS copiado entre
+> páginas, emojis como iconos), el esquema de `localStorage` no tiene versión y
+> hay bugs visibles en la pantalla principal. Construir encima multiplica la
+> deuda. Esto va primero.
 
-- [ ] **1.1 · Registrar cómo te fue** · S · _sin dependencias_
-  Al terminar el último set de cada ejercicio, una tarjeta con un solo toque:
-  **fácil / justo / difícil**. Nada de formularios.
-  - `db.js`: nueva clave `sp.rendimiento` → `{ [idEjercicio]: [{ fecha, valoracion, series, minutos }] }`
-    y funciones `getRendimiento()` / `addValoracion(id, valor)`.
-  - `entrenar.astro`: mostrarla en `siguienteEjercicio()`, antes de avanzar.
-    Se puede omitir (no bloquea el entrenamiento).
-  - ✅ *Listo cuando*: tras una sesión, `sp.rendimiento` tiene una entrada por
-    ejercicio y se puede saltar sin romper el flujo.
+- [ ] **0.1 · Bugs activos** · S · _sin dependencias_
+  - Duración estimada real: hoy es `ejercicios × minPorEjercicio` e ignora
+    descansos y cuenta atrás; la tarjeta de hoy dice «~5 min» y «son solo 15
+    minutos» en la misma línea. Un único `duracionEstimadaMin()` para rutinas y
+    editor.
+  - Los estiramientos (`stretch`, `pose`) no entran en el pool de `plan.js`
+    (sí se pueden añadir a mano desde el buscador).
+  - «Septiembre **De** 2026»: `capitalize` pone en mayúscula cada palabra.
+  - Músculo y equipamiento en español («abdominales», «peso corporal») en vez
+    de «ABS / BODY WEIGHT».
+  - La edad se pedía «para ajustar la intensidad» y no se usaba: ahora fija el
+    descanso y las series iniciales la primera vez que se crea el plan.
+  - El nombre del usuario ya no se inyecta con `innerHTML`.
+  - ✅ *Listo cuando*: la tarjeta de hoy y el editor muestran la misma duración,
+    coherente con los ajustes, y ninguna rutina generada contiene estiramientos.
 
-- [ ] **1.2 · Motor de progresión** · M · _depende de 1.1_
-  Nuevo `src/lib/progresion.js` que, dado el histórico de un ejercicio, decide
-  `subir | mantener | bajar`.
-  - Regla inicial: dos «fácil» seguidos → +1 serie (tope 6). Un «difícil» → −1
-    serie (mínimo 2). Si ya está en el tope, se pasa a la variante más dura (1.3).
-  - Se guarda por ejercicio en `sp.ajustesEjercicio` → `{ [id]: { series, minutos } }`.
-  - `entrenar.astro` debe leer el ajuste del ejercicio **antes** que el global
-    de `getSettings()`.
-  - ✅ *Listo cuando*: marcar «fácil» dos veces hace que ese ejercicio arranque
-    con una serie más la próxima vez, y se ve en la interfaz por qué subió.
+- [ ] **0.2 · Esquema versionado y migraciones** · S
+  `sp.version` + `migrar()` en `db.js` al arrancar. Sin esto, el primer cambio
+  de formato (Fase 2) rompe los perfiles existentes.
+  - ✅ *Listo cuando*: un perfil sin `sp.version` se migra solo y queda marcado.
 
-- [ ] **1.3 · Familias de variantes (progresión real)** · L · _depende de 1.2_
-  El dataset **no trae dificultad**, hay que aportarla nosotros. Empezar con
-  ~10 familias de peso corporal ordenadas de fácil a difícil (flexión de pared →
-  de rodillas → normal → diamante → arquero; sentadilla asistida → normal →
-  búlgara → a una pierna; plancha de rodillas → normal → lateral → con toque).
-  - Mapa manual en `src/lib/variantes.js` o como campo extra en
-    `scripts/generar-datos.py`.
-  - ✅ *Listo cuando*: al topar las series, el ejercicio se sustituye por el
-    siguiente de su familia avisando «subimos de nivel».
+- [ ] **0.3 · Tokens de diseño + componentes base** · M
+  - Tokens en `global.css`: espaciado base 4 (`--s-1…7`), 6 tamaños de letra
+    fluidos con `clamp()`, 3 radios, color **semántico** (`--surface-0…3`,
+    `--fg`, `--fg-muted`, `--line`, `--accent`, `--success`, `--warning`,
+    `--danger`, `--focus`), duraciones y curvas, `--tap: 44px`.
+  - `src/components/`: `TopBar`, `Button`, `IconButton`, `Chip` (con
+    `aria-pressed`), `Tag` (solo lectura, distinguible de lo pulsable),
+    `Stepper`, `Card`, `Sheet`, `Dialog` (`<dialog>` nativo), `Toast`, `Icon`.
+  - Fuera los duplicados (`.volver`, `.modal`, `.peligro-btn`, `.oculto`) y los
+    colores sueltos (`#ff8c38`, `#d92d20`, `#ff6b5e`…).
+  - Un solo acento por pantalla (el CTA). Días fallados en neutro, no en rojo.
+  - `:focus-visible` global; nada de `outline: none`.
+  - Sin animación `rise` al navegar: ya hay View Transitions.
+  - Ajustes con `Stepper` (no `input type=number`) y guardado al instante,
+    como el editor.
+  - ✅ *Listo cuando*: `grep` de `font-size`/`border-radius` con valores
+    literales en `src/pages` no devuelve nada.
 
-- [ ] **1.4 · Repeticiones, no solo tiempo** · M
-  Muchos ejercicios son por repeticiones y hoy todo es cronómetro. Permitir que
-  un ejercicio sea «12 repeticiones» y registrar cuántas hiciste.
+- [ ] **0.4 · Iconos SVG en los controles** · S
+  Sprite de ~20 iconos (estilo Lucide). Emojis solo como contenido
+  (celebraciones), nunca en botones ni etiquetas.
+
+- [ ] **0.5 · Rediseño de Entrenar** · M · _depende de 0.3_
+  Hoy, a 375×667, el botón «Empezar» queda bajo el pliegue.
+  - Barra de acción fija abajo (Empezar + micrófono) respetando safe areas.
+  - GIF con `aspect-ratio` y `max-height: 34svh`, en marco neutro (no blanco
+    puro sobre fondo oscuro).
+  - Minutos/series y «Cómo se hace» pasan a `Sheet`.
+  - Timer con `min(70vmin, 420px)` y cifras de tamaño display (adelanta el
+    modo «teléfono lejos»).
+  - Horizontal: GIF a la izquierda, timer a la derecha. Quitar
+    `orientation: portrait` del manifiesto.
+  - `aria-live` en los cambios de fase.
+  - ✅ *Listo cuando*: todo lo esencial cabe sin scroll en 375×667 y en
+    horizontal se ve el timer desde dos metros.
+
+- [ ] **0.6 · Layouts responsive** · M · _depende de 0.3_
+  Mobile-first; container queries en componentes, media queries solo para el
+  layout.
+  - `< 360`: compacto · `360–599`: una columna + barra inferior ·
+    `600–899`: grids de 2 · `≥ 900`: rail lateral y vistas de dos paneles.
+  - Rutinas: en móvil el calendario se reduce a la tira de la semana; en
+    escritorio, hoy + semana a la izquierda y calendario a la derecha.
+  - Buscar: filtros en sidebar y resultados en grid `auto-fill` en escritorio.
+  - Editar: arrastrar para reordenar y menú «⋯» por fila (no 4 botones de
+    32 px); en escritorio, lista + vista previa.
+  - `(hover: hover)` para hovers, `(pointer: coarse)` para objetivos táctiles,
+    `prefers-reduced-motion` en todo.
+  - ✅ *Listo cuando*: se revisa cada pantalla a 320, 375, 768, 1024 y 1440 px
+    sin scroll horizontal ni columnas vacías.
+
+- [ ] **0.7 · Tests de la lógica** · S
+  Vitest para `plan.js` y `calcularRacha`. Las fases 2 y 5 son pura lógica.
 
 ---
 
-## Fase 2 — Voz completa: entrenar sin tocar la pantalla 🎙️
-
-> **Por qué**: ya tenemos micrófono y síntesis funcionando, pero solo para decir
-> «ahora». En plancha, con las manos en el suelo, nadie toca el teléfono. Es la
-> ventaja real frente a cualquier otra app de rutinas.
-
-- [ ] **2.1 · Vocabulario de comandos** · M
-  Hoy `voice.js` tiene una sola expresión regular por idioma. Convertirla en un
-  mapa de intenciones: `empezar`, `siguiente`, `pausa`, `seguir`, `repetir`,
-  `saltar`, `cuánto falta`, `terminar` — en los 10 idiomas ya soportados.
-  - `entrenar.astro`: un despachador que enrute cada intención según la fase
-    (`espera` / `trabajo` / `descanso`).
-  - ✅ *Listo cuando*: se completa una sesión entera sin tocar la pantalla.
-
-- [ ] **2.2 · El entrenador habla** · M · _depende de 2.1_
-  Que anuncie el ejercicio y el músculo, cuente «tres, dos, uno» antes de
-  arrancar, avise «última serie» y «vas por la mitad».
-  - Generalizar el patrón que ya usa el botón «Escuchar instrucciones»: un
-    helper `hablar()` que **silencia el micrófono mientras habla** para que la
-    propia voz no dispare comandos.
-
-- [ ] **2.3 · Micrófono activo toda la sesión** · S · _depende de 2.1_
-  Hoy solo escucha en la pantalla de espera. Mantenerlo vivo durante trabajo y
-  descanso, vigilando el consumo de batería (`onend` ya lo reinicia solo).
-
-- [ ] **2.4 · Modo «teléfono lejos»** · S
-  Números gigantes y alto contraste durante el temporizador, para verlo desde
-  el suelo a dos metros.
-
----
-
-## Fase 3 — Que no se pierdan tus datos 💾
+## Fase 1 — Que no se pierdan tus datos 💾
 
 > **El riesgo**: todo vive en `localStorage` de un dispositivo. Un «borrar datos
-> de Safari» se lleva historial, racha y rutinas. Estar instalada en la pantalla
-> de inicio protege bastante, pero no es garantía.
+> de Safari» se lleva historial, racha y rutinas, y cada fase siguiente guarda
+> más cosas. Por eso sube antes que la progresión.
 
-- [ ] **3.1 · Exportar e importar JSON** · S
-  Botones en Ajustes. Exportar `{ version, perfil, rutinas, ajustes, historial,
-  rendimiento }` como descarga con la fecha en el nombre; importar validando
-  `version` y confirmando con el modal que ya existe.
-  - Bonus: sirve de sincronización manual entre móvil y escritorio.
+- [ ] **1.1 · Exportar e importar JSON** · S · _depende de 0.2_
+  Botones en Ajustes. Exportar todas las claves `sp.*` con `version` y la fecha
+  en el nombre; importar validando y migrando la versión, con confirmación.
   - ✅ *Listo cuando*: exportas, borras todo, importas y queda igual que antes.
 
-- [ ] **3.2 · Pedir almacenamiento persistente** · S
-  Llamar a `navigator.storage.persist()` y mostrar en Ajustes el espacio usado
-  (`navigator.storage.estimate()`), avisando si el navegador no lo concede.
+- [ ] **1.2 · Almacenamiento persistente** · S
+  `navigator.storage.persist()` y espacio usado en Ajustes
+  (`navigator.storage.estimate()`), avisando si no se concede.
+
+- [ ] **1.3 · Recordatorio de copia** · S
+  Aviso discreto cuando hay muchas sesiones sin exportar.
 
 ---
 
-## Fase 4 — Calidad de la sesión 🧘
+## Fase 2 — Que la app progrese contigo 🎯
 
-- [ ] **4.1 · Calentamiento y estiramientos** · M
-  Dos minutos de activación al empezar y estiramientos al terminar, sacados del
-  mismo dataset (los nombres con `stretch` ya son identificables; marcarlos con
-  un campo `tipo` en `scripts/generar-datos.py`).
+> **El problema**: la semana 12 es idéntica a la semana 1. El cuerpo se adapta
+> en ~3 semanas y ahí es donde se abandona. Lógica determinista, sin IA.
 
-- [ ] **4.2 · Descanso entre ejercicios** · S
-  Hoy solo existe el descanso de 5 s entre series; al cambiar de ejercicio no
-  hay pausa configurable.
+- [ ] **2.1 · Repeticiones o tiempo por ejercicio** · M
+  Va primero: el motor de progresión necesita saber en qué unidad progresa.
+  Un ejercicio puede ser «12 repeticiones» y registrar cuántas hiciste.
 
----
+- [ ] **2.2 · Registrar cómo te fue** · S
+  Tras el último set: **fácil / justo / difícil**, un toque, omitible.
+  `sp.rendimiento` → `{ [id]: [{ fecha, valoracion, series, minutos|reps }] }`.
 
-## Fase 5 — El «para qué» y la motivación 🏆
+- [ ] **2.3 · Motor de progresión** · M · _depende de 2.1, 2.2, 0.7_
+  `src/lib/progresion.js` → `subir | mantener | bajar`. Dos «fácil» → +1 serie
+  (tope 6); un «difícil» → −1 (mínimo 2). Ajuste por ejercicio en
+  `sp.ajustesEjercicio`, leído antes que el global. La interfaz dice por qué.
 
-- [ ] **5.1 · Objetivo medible** · M
-  La app se llama SinPanza y no registra un solo dato del objetivo. Peso o
-  cintura una vez por semana, con su gráfica. Es lo que hace volver en la
-  semana 8.
+- [ ] **2.4 · Familias de variantes** · L · _depende de 2.3_
+  ~10 familias de peso corporal de fácil a difícil (flexiones, sentadillas,
+  plancha…). Al topar series, se pasa a la siguiente: «subimos de nivel».
 
-- [ ] **5.2 · Pantalla de progreso** · M
-  Ya guardamos cada sesión pero solo mostramos un contador y el mes. Con esos
-  mismos datos: horas totales, mejor racha histórica, zona más entrenada y mapa
-  de calor del año. Cero datos nuevos.
+- [ ] **2.5 · Semana de descarga** · S · _depende de 2.3_
+  Cada 4–6 semanas, −1 serie en todo durante una semana.
 
-- [ ] **5.3 · Logros** · S · _depende de 5.2_
-  Primera semana completa, 10 sesiones, racha de 30 días.
-
----
-
-## Fase 6 — Pulido ✨
-
-- [ ] **6.1 · Nombres de ejercicios en español** · M
-  Traducimos las instrucciones pero los títulos siguen en inglés («Arms Apart
-  Circular Toe Touch»). El dataset no trae nombres traducidos, así que hay que
-  decidir: glosario manual de los ~250 de peso corporal, o mostrar el nombre en
-  inglés con un subtítulo claro en español. **Decisión pendiente.**
-
-- [ ] **6.2 · Convivir con la música** · S
-  Bajar el volumen de la música en vez de pelear con ella al sonar los pitidos
-  y la voz.
+- [ ] **2.6 · Rutinas equilibradas** · M
+  `plan.js` reparte empuje / tirón / pierna / core en vez de rotar categorías
+  al azar.
 
 ---
 
-## Fase 7 — Lo que rompe el modelo actual ⚠️
+## Fase 3 — Calidad de la sesión 🧘
 
-> Todo lo anterior es local, gratis y sin conexión. Esto no. Decidir antes de
-> construir.
+- [ ] **3.1 · Calentamiento y vuelta a la calma** · M
+  Con los estiramientos que 0.1 saca del pool principal (campo `tipo` en
+  `scripts/generar-datos.py`).
+- [ ] **3.2 · Descanso entre ejercicios con vista previa del siguiente** · S
+- [ ] **3.3 · «No puedo con este»** · S
+  Cambiar en plena sesión por otro del mismo músculo y equipo.
+- [ ] **3.4 · Sesión exprés de 5 min** · S
+  Para los días sin tiempo: mantiene la racha.
+- [ ] **3.5 · Resumen final por ejercicio** · S
+- [ ] **3.6 · Vibración en los cambios de fase** · S (`navigator.vibrate`, Android)
 
-- [ ] **7.1 · Recordatorios push** · L · _requiere servidor_
-  Es lo que más mejoraría la constancia. Una PWA no tiene notificaciones locales
-  programadas fiables; iOS admite push en apps instaladas desde la 16.4, pero
-  **enviarlas exige un servidor**. Introduce infraestructura y coste en algo que
-  hoy cuesta cero.
+---
 
-- [ ] **7.2 · Sincronización entre dispositivos** · L · _requiere servidor_
-  Con 3.1 ya tienes sincronización manual. Automatizarla implica backend y
-  cuentas. Probablemente no vale la pena.
+## Fase 4 — Voz completa: entrenar sin tocar la pantalla 🎙️
+
+- [ ] **4.1 · Vocabulario de comandos** · M
+  Mapa de intenciones (`empezar`, `siguiente`, `pausa`, `seguir`, `repetir`,
+  `saltar`, `cuánto falta`, `terminar`) en los 10 idiomas y un despachador por
+  fase.
+  - ✅ *Listo cuando*: se completa una sesión entera sin tocar la pantalla.
+- [ ] **4.2 · El entrenador habla** · M · _depende de 4.1_
+  Helper `hablar()` que silencia el micrófono mientras habla.
+- [ ] **4.3 · Micrófono activo toda la sesión** · S · _depende de 4.1_
+
+---
+
+## Fase 5 — Progreso y motivación 🏆
+
+- [ ] **5.1 · Pantalla de Progreso** · M
+  Tercera pestaña: calendario completo, mapa de calor anual, horas, mejor
+  racha, zona más trabajada. Cero datos nuevos.
+- [ ] **5.2 · Medidas** · M
+  Peso o cintura semanal, gráfica SVG propia sin librerías.
+- [ ] **5.3 · Logros** · S · _depende de 5.1_
+- [ ] **5.4 · Resumen semanal** · S
+  Los lunes en la home: «3/3 días, +2 series en flexiones».
+- [ ] **5.5 · Compartir la sesión como imagen** · S
+  `<canvas>` + Web Share API, sin servidor.
+
+---
+
+## Fase 6 — Constancia sin servidor 🔔
+
+> Sustituye a los recordatorios push: con lo que ofrece el sistema se cubre la
+> mayor parte sin backend.
+
+- [ ] **6.1 · Exportar recordatorios `.ics`** · S
+  Eventos recurrentes a la hora elegida en tus días de entreno; avisa el
+  calendario del móvil. Fiable también en iOS.
+- [ ] **6.2 · Badge en el icono** · S
+  `navigator.setAppBadge()` si hoy toca y no está hecho (app instalada).
+- [ ] **6.3 · Comodín de racha** · S
+  Uno por semana para enfermedad o viaje.
+
+---
+
+## Fase 7 — Pulido ✨
+
+- [ ] **7.1 · Nombres de ejercicios en español** · M
+  Decisión: glosario manual de los ~325 de peso corporal, con el nombre en
+  inglés como subtítulo; el resto queda en inglés.
+- [ ] **7.2 · Convivir con la música** · S
+  `navigator.audioSession.type = 'ambient'` donde exista (Safari 17+) y pitidos
+  más cortos. Una web **no puede** bajar el volumen de otra app.
+- [ ] **7.3 · Tema claro** · S · _depende de 0.3_
+  Mejor legibilidad al aire libre; sale casi gratis con tokens semánticos.
+- [ ] **7.4 · Onboarding más corto** · S
+  Lo mínimo para empezar: zonas, equipo y días. Nombre y edad, opcionales.
+
+---
+
+## Lo que rompe el modelo actual ⚠️
+
+- [ ] **Push de verdad** · L · _requiere servidor_ — solo si 6.1/6.2 no bastan.
+- [ ] **Sincronización automática** · L · _requiere servidor_ — con 1.1 ya
+  existe la manual. Probablemente no vale la pena.
 
 ---
 
@@ -179,9 +241,9 @@ subir una serie no necesita un modelo de lenguaje, necesita recordar cómo te fu
 ## Cómo trabajamos
 
 1. Un ítem por sesión, empezando por el más alto sin marcar.
-2. Verificación real en el navegador (no solo que compile) antes de darlo por hecho.
+2. Verificación real en el navegador (no solo que compile) antes de darlo por
+   hecho — en móvil (375 px) y escritorio desde la Fase 0.
 3. Un commit por ítem, marcando aquí la casilla en el mismo commit.
 4. Si algo se descubre por el camino, se añade al roadmap en vez de improvisar.
 
-**Siguiente**: 1.1 — el toque de fácil/justo/difícil. Es poco código y desbloquea
-toda la Fase 1.
+**Siguiente**: 0.1 — bugs activos.
