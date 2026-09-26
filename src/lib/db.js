@@ -5,6 +5,7 @@ const K = {
   routines: 'sp.routines',
   history: 'sp.history',
   sesion: 'sp.sesion', // entrenamiento en curso, para reanudar si se sale por error
+  version: 'sp.version', // versión del formato de los datos guardados
 };
 
 const read = (key, fallback) => {
@@ -17,6 +18,46 @@ const read = (key, fallback) => {
 };
 
 const write = (key, value) => localStorage.setItem(key, JSON.stringify(value));
+
+// ---- Versión del formato y migraciones ----
+// Cada cambio de formato de los datos guardados sube VERSION_DATOS y añade su
+// migración en MIGRACIONES[n] (de n-1 a n). Se aplican en orden al cargar este
+// módulo, que importan todas las páginas. Una migración debe tolerar que no
+// haya datos (instalación nueva) y poder repetirse sin romper nada.
+export const VERSION_DATOS = 1;
+
+const MIGRACIONES = {
+  // 1: repetir el onboarding reescribía `creado` con la fecha de la edición, y
+  // el calendario la usa para no contar como fallados los días previos al plan.
+  // Se recupera como la más antigua entre `creado` y la primera sesión.
+  1: () => {
+    const perfil = read(K.profile, null);
+    if (!perfil) return;
+    const fechas = [perfil.creado, ...read(K.history, []).map((h) => h.fecha)]
+      .map((f) => new Date(f).getTime())
+      .filter((t) => !Number.isNaN(t));
+    if (fechas.length === 0) return;
+    write(K.profile, { ...perfil, creado: new Date(Math.min(...fechas)).toISOString() });
+  },
+};
+
+export function migrar() {
+  const desde = read(K.version, 0);
+  // Datos de una versión más nueva de la app (p. ej. importados): no se tocan
+  if (desde >= VERSION_DATOS) return;
+  for (let n = desde + 1; n <= VERSION_DATOS; n++) {
+    try {
+      MIGRACIONES[n]();
+    } catch (err) {
+      // Se deja la versión en la última buena para reintentar en la próxima carga
+      console.error(`[sinpanza] falló la migración ${n}`, err);
+      return;
+    }
+    write(K.version, n);
+  }
+}
+
+if (typeof localStorage !== 'undefined') migrar();
 
 export const DEFAULT_SETTINGS = {
   minPorEjercicio: 3,

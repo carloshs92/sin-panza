@@ -37,9 +37,12 @@ Estado: `[ ]` pendiente · `[~]` en curso · `[x]` hecho
   - ✅ *Listo cuando*: la tarjeta de hoy y el editor muestran la misma duración,
     coherente con los ajustes, y ninguna rutina generada contiene estiramientos.
 
-- [ ] **0.2 · Esquema versionado y migraciones** · S
+- [x] **0.2 · Esquema versionado y migraciones** · S
   `sp.version` + `migrar()` en `db.js` al arrancar. Sin esto, el primer cambio
   de formato (Fase 2) rompe los perfiles existentes.
+  - Migración 1: recupera `creado` como la fecha más antigua entre el perfil y
+    el historial (el onboarding repetido la sobrescribía).
+  - Para añadir una: subir `VERSION_DATOS` y escribir `MIGRACIONES[n]`.
   - ✅ *Listo cuando*: un perfil sin `sp.version` se migra solo y queda marcado.
 
 - [ ] **0.3 · Tokens de diseño + componentes base** · M
@@ -250,4 +253,4 @@ subir una serie no necesita un modelo de lenguaje, necesita recordar cómo te fu
 3. Un commit por ítem, marcando aquí la casilla en el mismo commit.
 4. Si algo se descubre por el camino, se añade al roadmap en vez de improvisar.
 
-**Siguiente**: 0.2 — esquema versionado y migraciones.
+**Siguiente**: 0.3 — tokens de diseño + componentes base.
