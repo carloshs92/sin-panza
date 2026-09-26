@@ -97,6 +97,24 @@ export const clearSesion = () => localStorage.removeItem(K.sesion);
 
 export const resetAll = () => Object.values(K).forEach((k) => localStorage.removeItem(k));
 
+// ---- Copia de seguridad ----
+// Lo que viaja en una copia. La sesión en curso no (es efímera) ni la versión
+// (va aparte, en la cabecera de la copia). Al añadir una clave nueva a K que
+// sea dato del usuario, añádela aquí.
+const EN_COPIA = ['profile', 'settings', 'routines', 'history'];
+
+export const exportarDatos = () =>
+  Object.fromEntries(EN_COPIA.map((k) => [k, read(K[k], null)]).filter(([, v]) => v !== null));
+
+// Reemplaza todo por el contenido de una copia (ya validada) y la sube de
+// versión con las migraciones si viene de una versión anterior de la app.
+export function importarDatos(datos, version) {
+  resetAll();
+  for (const k of EN_COPIA) if (datos[k] != null) write(K[k], datos[k]);
+  write(K.version, version);
+  migrar();
+}
+
 export const DIAS = [
   { id: 'lunes', label: 'Lunes', corto: 'L' },
   { id: 'martes', label: 'Martes', corto: 'M' },

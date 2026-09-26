@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import Icon from '../components/Icon.astro';
+import Dialog from '../components/Dialog.astro';
 ---
 <Base title="Bienvenido">
   <div id="onboarding">
@@ -17,6 +18,12 @@ import Icon from '../components/Icon.astro';
         <p class="muted">Rutinas a tu medida, guiadas por voz y pensadas para los minutos que sí tienes. Todo se guarda solo en tu dispositivo.</p>
       </div>
       <button class="btn" data-next>Empezar</button>
+      <!-- Si el navegador borró los datos, aquí se recupera todo sin rehacer el plan -->
+      <div class="restaurar" id="bloqueRestaurar">
+        <button class="btn btn-ghost" id="btnTengoCopia"><Icon nombre="upload" /> Tengo una copia de seguridad</button>
+        <input type="file" id="archivoCopia" accept="application/json,.json" hidden />
+        <p class="msg-error" id="msgCopia" role="alert"></p>
+      </div>
     </section>
 
     <!-- Paso 1: nombre -->
@@ -84,6 +91,12 @@ import Icon from '../components/Icon.astro';
       <button class="btn" disabled id="btnFinal">Crear mi plan</button>
     </section>
 
+    <Dialog id="modalRestaurar" icono="upload" titulo="¿Restaurar esta copia?">
+      <p id="restaurarResumen">—</p>
+      <button slot="acciones" class="btn" id="btnRestaurarSi">Restaurar</button>
+      <button slot="acciones" class="btn btn-secondary" id="btnRestaurarNo">Cancelar</button>
+    </Dialog>
+
     <!-- Paso 8: generando -->
     <section class="paso" data-paso="8">
       <div class="hero">
@@ -126,6 +139,9 @@ import Icon from '../components/Icon.astro';
 
   .chips.dias { display: grid; grid-template-columns: repeat(7, 1fr); }
   .nota-final { font-size: var(--t-sm); }
+  .restaurar { display: flex; flex-direction: column; align-items: center; gap: var(--s-2); margin-top: calc(-1 * var(--s-3)); }
+  .msg-error { font-size: var(--t-sm); color: var(--danger); text-align: center; }
+  .msg-error:empty { display: none; }
   .nota-final:empty { display: none; }
   .chips.dias :global(.chip) { justify-content: center; aspect-ratio: 1; padding: 0; border-radius: var(--r-md); font-size: var(--t-md); }
 </style>
@@ -134,6 +150,7 @@ import Icon from '../components/Icon.astro';
   import { getProfile, saveProfile, getRoutines, saveRoutines, getSettings, saveSettings, hayAjustesGuardados, CATEGORIAS, DIAS, IDIOMAS, EQUIPOS } from '../lib/db.js';
   import { cargarEjercicios, generarRutinas, ajustesPorEdad } from '../lib/plan.js';
   import { estadoInicial, perfilDesdeEstado, planRutinas, traducirRutinas } from '../lib/perfil.js';
+  import { leerArchivoCopia, describirCopia, restaurarCopia } from '../lib/respaldo.js';
   import { marcarChip } from '../lib/ui.js';
   import { navigate } from 'astro:transitions/client';
 
@@ -178,6 +195,35 @@ import Icon from '../components/Icon.astro';
     }
 
     root.querySelectorAll('[data-next]').forEach((b) => b.addEventListener('click', () => irA(paso + 1)));
+
+    // Restaurar una copia: solo tiene sentido si aún no hay un perfil aquí
+    // (editando tu plan, la importación está en Ajustes)
+    if (previo) root.querySelector('#bloqueRestaurar').classList.add('oculto');
+    const modalRestaurar = root.querySelector('#modalRestaurar');
+    let copiaPendiente = null;
+    root.querySelector('#btnTengoCopia').addEventListener('click', () => root.querySelector('#archivoCopia').click());
+    root.querySelector('#archivoCopia').addEventListener('change', async (ev) => {
+      const archivo = ev.target.files?.[0];
+      ev.target.value = '';
+      root.querySelector('#msgCopia').textContent = '';
+      if (!archivo) return;
+      const leida = await leerArchivoCopia(archivo);
+      if (!leida.ok) {
+        root.querySelector('#msgCopia').textContent = leida.error;
+        return;
+      }
+      root.querySelector('#restaurarResumen').textContent = describirCopia(leida.resumen);
+      copiaPendiente = leida.copia;
+      modalRestaurar.showModal();
+    });
+    root.querySelector('#btnRestaurarNo').addEventListener('click', () => modalRestaurar.close());
+    modalRestaurar.addEventListener('close', () => { copiaPendiente = null; });
+    root.querySelector('#btnRestaurarSi').addEventListener('click', () => {
+      if (!copiaPendiente) return;
+      restaurarCopia(copiaPendiente);
+      modalRestaurar.close();
+      navigate('/rutinas', { history: 'replace' });
+    });
 
     // Nombre
     const nombreInput = root.querySelector('#nombreInput');

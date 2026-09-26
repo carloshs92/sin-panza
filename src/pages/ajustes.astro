@@ -63,9 +63,16 @@ import Icon from '../components/Icon.astro';
     </section>
 
     <section class="card">
-      <h2 class="card-title">Datos</h2>
-      <p class="muted">Todo se guarda solo en este dispositivo.</p>
+      <h2 class="card-title">Tus datos</h2>
+      <p class="muted">Todo se guarda solo en este dispositivo. Guarda una copia de vez en cuando: si el navegador borra sus datos, podrás recuperarlo todo. También sirve para pasarlos a otro dispositivo.</p>
       <div class="acciones">
+        <button class="btn btn-secondary btn-sm" id="btnExportar"><Icon nombre="download" /> Guardar copia</button>
+        <button class="btn btn-secondary btn-sm oculto" id="btnCompartir"><Icon nombre="share" /> Compartir copia</button>
+        <button class="btn btn-secondary btn-sm" id="btnImportar"><Icon nombre="upload" /> Importar copia</button>
+      </div>
+      <input type="file" id="archivoCopia" accept="application/json,.json" hidden />
+      <p class="msg-error" id="msgCopia" role="alert"></p>
+      <div class="acciones separada">
         <button class="btn btn-ghost btn-sm peligro" id="btnReset"><Icon nombre="trash" /> Borrar todo y empezar de cero</button>
       </div>
     </section>
@@ -76,6 +83,13 @@ import Icon from '../components/Icon.astro';
       Datos: <a href="https://github.com/hasaneyldrm/exercises-dataset" target="_blank" rel="noopener">exercises-dataset</a> (MIT)
     </footer>
   </div>
+
+  <Dialog id="modalImportar" icono="upload" titulo="¿Importar esta copia?">
+    <p id="importarResumen">—</p>
+    <p>Reemplazará todo lo que hay ahora en este dispositivo: perfil, rutinas, ajustes e historial.</p>
+    <button slot="acciones" class="btn" id="btnImportarSi">Importar y reemplazar</button>
+    <button slot="acciones" class="btn btn-secondary" id="btnImportarNo">Cancelar</button>
+  </Dialog>
 
   <Dialog id="modalReset" icono="alert" tono="peligro" titulo="¿Seguro que quieres borrar todo?">
     <p>Se eliminará tu perfil, tus rutinas y todo tu historial de entrenamientos. <b>Esta acción no se puede deshacer.</b></p>
@@ -103,6 +117,9 @@ import Icon from '../components/Icon.astro';
   .fila :global(.stepper) { flex-shrink: 0; }
   .acciones { display: flex; flex-wrap: wrap; gap: var(--s-2); }
   .peligro { color: var(--danger); padding-inline: 0; }
+  .separada { padding-top: var(--s-3); border-top: 1px solid var(--line); }
+  .msg-error { font-size: var(--t-sm); color: var(--danger); }
+  .msg-error:empty { display: none; }
 
   .estado-off { display: flex; align-items: flex-start; gap: var(--s-2); font-weight: 600; }
   .estado-off.listo { color: var(--success); }
@@ -121,6 +138,7 @@ import Icon from '../components/Icon.astro';
   import { urlsDeRutinas, cuantoFalta, descargar, hayCache } from '../lib/media.js';
   import { conectarStepper, toast } from '../lib/ui.js';
   import { conIcono } from '../lib/iconos.js';
+  import { crearCopia, nombreArchivo, leerArchivoCopia, describirCopia, restaurarCopia } from '../lib/respaldo.js';
   import { navigate } from 'astro:transitions/client';
 
   document.addEventListener('astro:page-load', () => {
@@ -238,6 +256,60 @@ import Icon from '../components/Icon.astro';
       } else {
         $('msgManual').classList.toggle('oculto');
       }
+    });
+
+    // ---- copia de seguridad ----
+    const archivoDeCopia = () =>
+      new File([JSON.stringify(crearCopia(), null, 2)], nombreArchivo(), { type: 'application/json' });
+
+    $('btnExportar').addEventListener('click', () => {
+      const url = URL.createObjectURL(archivoDeCopia());
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = nombreArchivo();
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast('Copia guardada');
+    });
+
+    // En el móvil, compartir (Archivos, Drive, correo…) suele ser más útil que descargar
+    if (navigator.canShare?.({ files: [archivoDeCopia()] })) {
+      $('btnCompartir').classList.remove('oculto');
+      $('btnCompartir').addEventListener('click', () => {
+        navigator.share({ files: [archivoDeCopia()], title: 'Copia de SinPanza' }).catch(() => { /* cancelado */ });
+      });
+    }
+
+    const modalImportar = document.getElementById('modalImportar');
+    let copiaPendiente = null;
+
+    $('btnImportar').addEventListener('click', () => $('archivoCopia').click());
+    $('archivoCopia').addEventListener('change', async () => {
+      const archivo = $('archivoCopia').files?.[0];
+      $('archivoCopia').value = ''; // permite volver a elegir el mismo archivo
+      $('msgCopia').textContent = '';
+      if (!archivo) return;
+
+      const leida = await leerArchivoCopia(archivo);
+      if (!leida.ok) {
+        $('msgCopia').textContent = leida.error;
+        return;
+      }
+      document.getElementById('importarResumen').textContent = describirCopia(leida.resumen);
+      copiaPendiente = leida.copia;
+      modalImportar.showModal();
+    });
+
+    document.getElementById('btnImportarNo').addEventListener('click', () => modalImportar.close());
+    modalImportar.addEventListener('click', (e) => { if (e.target === modalImportar) modalImportar.close(); });
+    modalImportar.addEventListener('close', () => { copiaPendiente = null; });
+    document.getElementById('btnImportarSi').addEventListener('click', () => {
+      if (!copiaPendiente) return;
+      restaurarCopia(copiaPendiente);
+      modalImportar.close();
+      navigate('/rutinas');
     });
 
     // ---- borrar todo, con alerta de confirmación ----

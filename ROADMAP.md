@@ -149,10 +149,21 @@ Estado: `[ ]` pendiente · `[~]` en curso · `[x]` hecho
 > de Safari» se lleva historial, racha y rutinas, y cada fase siguiente guarda
 > más cosas. Por eso sube antes que la progresión.
 
-- [ ] **1.1 · Exportar e importar JSON** · S · _depende de 0.2_
-  Botones en Ajustes. Exportar todas las claves `sp.*` con `version` y la fecha
-  en el nombre; importar validando y migrando la versión, con confirmación.
-  - ✅ *Listo cuando*: exportas, borras todo, importas y queda igual que antes.
+- [x] **1.1 · Exportar e importar JSON** · S · _depende de 0.2_
+  `lib/respaldo.js` + `exportarDatos`/`importarDatos` en `db.js` (14 tests).
+  - Copia `{ formato, version, exportado, datos }` con perfil, ajustes,
+    rutinas e historial (no la sesión en curso). Archivo
+    `sinpanza-AAAA-MM-DD.json`; en dispositivos que lo permiten, también
+    «Compartir copia» (Archivos, Drive, correo…).
+  - Importar valida antes de tocar nada (formato, versión, perfil), resume lo
+    que trae, **reemplaza** tras confirmar y migra si la copia es antigua.
+    Una copia de una versión más nueva de la app se rechaza.
+  - También desde la **bienvenida** («Tengo una copia de seguridad»): si el
+    navegador borró los datos, la app arranca en el onboarding y ahí es donde
+    hace falta.
+  - Al añadir claves de usuario nuevas a `db.js`, sumarlas a `EN_COPIA`.
+  - ✅ Verificado en el navegador: guardar copia → borrar todo → restaurar
+    desde la bienvenida deja `localStorage` idéntico.
 
 - [ ] **1.2 · Almacenamiento persistente** · S
   `navigator.storage.persist()` y espacio usado en Ajustes
@@ -295,4 +306,4 @@ subir una serie no necesita un modelo de lenguaje, necesita recordar cómo te fu
 3. Un commit por ítem, marcando aquí la casilla en el mismo commit.
 4. Si algo se descubre por el camino, se añade al roadmap en vez de improvisar.
 
-**Siguiente**: 1.1 — exportar e importar JSON (la fase 0 está completa).
+**Siguiente**: 1.2 — almacenamiento persistente.
