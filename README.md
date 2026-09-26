@@ -13,6 +13,7 @@ Requiere Node 18.17+ (hay `.nvmrc` con 22):
 nvm use 22
 npm install
 npm run dev        # http://localhost:4321
+npm test           # tests de la lógica (Vitest): plan, racha y migraciones
 ```
 
 > Las imágenes y GIFs **no viven en este repo**: se sirven desde el dataset

@@ -1,236 +1,285 @@
 ---
 import Base from '../layouts/Base.astro';
+import TopBar from '../components/TopBar.astro';
+import Dialog from '../components/Dialog.astro';
+import Sheet from '../components/Sheet.astro';
+import Stepper from '../components/Stepper.astro';
+import Icon from '../components/Icon.astro';
 ---
-<Base title="Entrenando">
-  <div id="player">
-    <header class="p-head">
-      <a href="/rutinas" class="volver" id="btnVolver" aria-label="Volver">←</a>
-      <div class="p-info">
-        <b id="pDia">—</b>
-        <span class="muted" id="pPos">Ejercicio 1 de 5</span>
-      </div>
-      <span class="mic-dot" id="micDot" title="Micrófono">🎙️</span>
-    </header>
-    <div class="barra"><div class="barra-fill" id="pBarra"></div></div>
+<Base title="Entrenando" ancho="ancho">
+  <!-- data-fase (espera | cuenta | trabajo | descanso | fin) decide qué se ve -->
+  <div id="player" data-fase="espera">
+    <div class="cabecera">
+      <TopBar volver="/rutinas" volverId="btnVolver" tituloId="pDia" subId="pPos" />
+      <div class="progress"><div id="pBarra"></div></div>
+    </div>
 
     <!-- Vista de ejercicio -->
-    <section id="vistaEjercicio" class="vista">
-      <div class="media card" id="mediaBox">
-        <img id="exGif" src="" alt="Demostración del ejercicio" />
-      </div>
-      <p class="credito">© Gym visual — <a href="https://gymvisual.com/" target="_blank" rel="noopener">gymvisual.com</a></p>
+    <section id="vistaEjercicio" class="escena">
+      <figure class="media">
+        <div class="media-frame">
+          <img id="exGif" src="" alt="Demostración del ejercicio" />
+          <figcaption class="credito">© <a href="https://gymvisual.com/" target="_blank" rel="noopener">Gym visual</a></figcaption>
+        </div>
+      </figure>
 
-      <div class="ex-titulo">
-        <h1 id="exNombre">—</h1>
-        <div class="ex-tags" id="exTags"></div>
-      </div>
-
-      <div class="series-dots" id="seriesDots"></div>
-
-      <!-- Estado: esperando voz -->
-      <div class="estado" id="estEspera">
-        <div class="voz-circulo" id="vozCirculo">🎙️</div>
-        <p class="voz-msg">Di <b id="vozPalabra">«¡ahora!»</b> para empezar</p>
-        <p class="muted" id="vozEstado">Activa el micrófono para el control por voz</p>
-        <button class="btn small ghost" id="btnMic">🎙️ Activar micrófono</button>
-        <button class="btn" id="btnManual">▶ Empezar ahora</button>
-
-        <div class="config-inline card">
-          <div class="cfg">
-            <span>⏱️ Minutos</span>
-            <div class="stepper">
-              <button data-cfg="min" data-d="-1">−</button>
-              <b id="cfgMin">3</b>
-              <button data-cfg="min" data-d="1">+</button>
-            </div>
-          </div>
-          <div class="cfg">
-            <span>🔁 Series</span>
-            <div class="stepper">
-              <button data-cfg="ser" data-d="-1">−</button>
-              <b id="cfgSer">4</b>
-              <button data-cfg="ser" data-d="1">+</button>
-            </div>
-          </div>
+      <div class="info">
+        <div class="ex-titulo">
+          <h2 id="exNombre">—</h2>
+          <div class="ex-tags" id="exTags"></div>
         </div>
 
-        <details class="pasos card" open>
-          <summary>📖 Cómo se hace</summary>
-          <button class="btn small ghost btn-leer" id="btnLeer">🔊 Escuchar instrucciones</button>
-          <ol id="exPasos"></ol>
-        </details>
-      </div>
+        <div class="series-dots" id="seriesDots" aria-hidden="true"></div>
 
-      <!-- Estado: cuenta atrás previa -->
-      <div class="estado oculto" id="estCuenta">
-        <div class="cuenta-num" id="cuentaNum">3</div>
-        <p class="cuenta-msg">Prepárate…</p>
-      </div>
-
-      <!-- Estado: trabajando / descanso -->
-      <div class="estado oculto" id="estTimer">
-        <div class="timer-wrap" id="timerWrap">
-          <svg viewBox="0 0 200 200" class="timer-svg">
-            <circle cx="100" cy="100" r="88" class="t-bg" />
-            <circle cx="100" cy="100" r="88" class="t-fg" id="tArco" />
-          </svg>
-          <div class="timer-centro">
-            <span class="t-fase" id="tFase">SERIE 1</span>
-            <b class="t-num" id="tNum">0:45</b>
-            <span class="muted t-hint" id="tHint">toca para pausar</span>
-          </div>
+        <!-- Estado: esperando el arranque -->
+        <div class="estado" id="estEspera">
+          <p class="voz-msg" id="vozMsg">Toca <b>Empezar</b> cuando estés en posición</p>
+          <p class="muted voz-estado" id="vozEstado"></p>
         </div>
-        <button class="btn ghost small" id="btnSaltar">Saltar ejercicio →</button>
+
+        <!-- Estado: cuenta atrás previa -->
+        <div class="estado oculto" id="estCuenta">
+          <div class="cuenta-num" id="cuentaNum">3</div>
+          <p class="cuenta-msg">Prepárate…</p>
+        </div>
+
+        <!-- Estado: trabajando / descanso -->
+        <div class="estado oculto" id="estTimer">
+          <button class="timer-wrap" id="timerWrap" aria-label="Pausar o seguir">
+            <svg viewBox="0 0 200 200" class="timer-svg" aria-hidden="true">
+              <circle cx="100" cy="100" r="88" class="t-bg" />
+              <circle cx="100" cy="100" r="88" class="t-fg" id="tArco" />
+            </svg>
+            <span class="timer-centro">
+              <span class="t-fase" id="tFase">SERIE 1</span>
+              <b class="t-num" id="tNum">0:45</b>
+              <span class="t-hint" id="tHint"></span>
+            </span>
+          </button>
+        </div>
       </div>
     </section>
 
-    <!-- Alerta al intentar salir con el entrenamiento en curso -->
-    <div class="modal-fondo oculto" id="modalSalir">
-      <div class="modal">
-        <div class="modal-emoji">🏃</div>
-        <h2>¿Salir del entrenamiento?</h2>
-        <p class="muted">Perderás el progreso de esta sesión. Tendrás que empezar de nuevo.</p>
-        <button class="btn peligro-btn" id="btnSalirSi">Sí, salir</button>
-        <button class="btn ghost" id="btnSalirNo">Seguir entrenando</button>
-      </div>
-    </div>
-
-    <!-- Reanudar un entrenamiento que quedó a medias -->
-    <div class="modal-fondo oculto" id="modalReanudar">
-      <div class="modal">
-        <div class="modal-emoji">⏳</div>
-        <h2>Tienes un entrenamiento a medias</h2>
-        <p class="muted" id="reanudarInfo">—</p>
-        <button class="btn" id="btnReanudarSi">▶ Continuar donde iba</button>
-        <button class="btn ghost" id="btnReanudarNo">Empezar de nuevo</button>
-      </div>
-    </div>
-
     <!-- Vista final -->
-    <section id="vistaFin" class="vista oculto">
+    <section id="vistaFin" class="oculto">
       <div class="fin">
-        <div class="fin-emoji">🏆</div>
-        <h1>¡Entrenamiento completado!</h1>
+        <div class="fin-emoji" aria-hidden="true">🏆</div>
+        <h2>¡Entrenamiento completado!</h2>
         <p class="muted" id="finResumen">—</p>
         <a href="/rutinas" class="btn">Volver a mis rutinas</a>
       </div>
     </section>
+
+    <!-- Barra de acción: siempre a mano, pegada abajo -->
+    <div class="barra-accion">
+      <div class="barra-fila" id="barEspera">
+        <button class="icon-btn" id="btnPasos" aria-label="Cómo se hace"><Icon nombre="book" /></button>
+        <button class="icon-btn" id="btnAjustar" aria-label="Ajustar minutos y series"><Icon nombre="sliders" /></button>
+        <button class="btn" id="btnManual"><Icon nombre="play" /> Empezar</button>
+        <button class="icon-btn mic" id="btnMic" aria-pressed="false" aria-label="Control por voz"><Icon nombre="mic-off" /></button>
+      </div>
+      <div class="barra-fila" id="barTimer">
+        <button class="btn btn-secondary" id="btnPausa"><Icon nombre="pause" /> Pausar</button>
+        <button class="btn btn-ghost btn-sm" id="btnSaltar">Saltar <Icon nombre="skip-forward" /></button>
+      </div>
+    </div>
+
+    <!-- Anuncios para lectores de pantalla: cambios de fase, no cada segundo -->
+    <p class="visually-hidden" id="anuncio" aria-live="polite"></p>
+
+    <Sheet id="sheetAjustes" titulo="Ajustar ejercicio">
+      <div class="cfg">
+        <span class="con-icono"><Icon nombre="timer" />Minutos por ejercicio</span>
+        <Stepper id="stMin" etiqueta="Minutos" />
+      </div>
+      <div class="cfg">
+        <span class="con-icono"><Icon nombre="repeat" />Series</span>
+        <Stepper id="stSer" etiqueta="Series" />
+      </div>
+      <p class="muted nota">Se guarda también para los próximos entrenamientos.</p>
+    </Sheet>
+
+    <Sheet id="sheetPasos" titulo="Cómo se hace">
+      <button class="btn btn-secondary btn-sm btn-leer" id="btnLeer"><Icon nombre="volume" /> Escuchar instrucciones</button>
+      <ol class="pasos" id="exPasos"></ol>
+    </Sheet>
+
+    <!-- Alerta al intentar salir con el entrenamiento en curso -->
+    <Dialog id="modalSalir" icono="log-out" tono="peligro" titulo="¿Salir del entrenamiento?">
+      <p>Perderás el progreso de esta sesión. Tendrás que empezar de nuevo.</p>
+      <button slot="acciones" class="btn btn-danger" id="btnSalirSi">Sí, salir</button>
+      <button slot="acciones" class="btn btn-secondary" id="btnSalirNo">Seguir entrenando</button>
+    </Dialog>
+
+    <!-- Reanudar un entrenamiento que quedó a medias -->
+    <Dialog id="modalReanudar" icono="history" titulo="Tienes un entrenamiento a medias">
+      <p id="reanudarInfo">—</p>
+      <button slot="acciones" class="btn" id="btnReanudarSi"><Icon nombre="play" /> Continuar donde iba</button>
+      <button slot="acciones" class="btn btn-secondary" id="btnReanudarNo">Empezar de nuevo</button>
+    </Dialog>
   </div>
 </Base>
 
 <style>
-  .p-head { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
-  .volver { font-size: 1.4rem; padding: 6px 12px; border-radius: 12px; background: var(--card); border: 1px solid var(--border); }
-  .p-info { flex: 1; display: flex; flex-direction: column; }
-  .p-info b { font-size: 1.05rem; }
-  .p-info span { font-size: 0.8rem; }
-  .mic-dot { font-size: 1.2rem; opacity: 0.3; transition: opacity 0.2s; }
-  .mic-dot.on { opacity: 1; filter: drop-shadow(0 0 8px var(--green)); }
+  /* La pantalla ocupa exactamente el alto visible: todo lo esencial sin scroll
+     y la barra de acción siempre abajo. */
+  #player {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+    min-height: calc(100svh - var(--shell-top) - var(--shell-bottom));
+  }
+  .cabecera { display: flex; flex-direction: column; gap: var(--s-3); }
 
-  .barra { height: 5px; border-radius: 99px; background: var(--card); overflow: hidden; margin-bottom: 20px; }
-  .barra-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), #ff8c38); border-radius: 99px; transition: width 0.5s ease; }
+  .escena { flex: 1; display: flex; flex-direction: column; gap: var(--s-3); }
+  .info { flex: 1; display: flex; flex-direction: column; gap: var(--s-3); }
 
-  .vista { display: flex; flex-direction: column; gap: 16px; }
-  .oculto { display: none !important; }
-
-  .media { padding: 0; overflow: hidden; background: #fff; display: flex; justify-content: center; }
-  .media img { width: 100%; max-height: 300px; object-fit: contain; }
-  .credito { font-size: 0.68rem; color: var(--text-dim); opacity: 0.7; text-align: right; margin-top: -8px; }
+  /* ---- ilustración ---- */
+  .media .media-frame {
+    position: relative;
+    display: flex; justify-content: center;
+    height: clamp(140px, 34svh, 340px);
+    border-radius: var(--r-lg);
+    transition: height var(--dur-3) var(--ease-out);
+  }
+  .media img { width: auto; max-width: 100%; }
+  /* Mientras corre el tiempo manda el timer: la ilustración se encoge */
+  #player:is([data-fase='cuenta'], [data-fase='trabajo'], [data-fase='descanso']) .media .media-frame { height: clamp(110px, 22svh, 240px); }
+  .credito {
+    position: absolute; right: var(--s-2); bottom: var(--s-1);
+    font-size: var(--t-xs); color: var(--surface-3);
+  }
   .credito a { text-decoration: underline; }
 
-  .ex-titulo h1 { font-size: 1.45rem; text-transform: capitalize; margin-bottom: 8px; }
-  .ex-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+  /* ---- ejercicio ---- */
+  .ex-titulo { display: flex; flex-direction: column; gap: var(--s-2); }
+  .ex-titulo h2 { font-size: var(--t-xl); text-transform: capitalize; }
+  .ex-tags { display: flex; flex-wrap: wrap; gap: var(--s-1); }
+  #player:not([data-fase='espera']) .ex-tags { display: none; }
 
-  .series-dots { display: flex; gap: 10px; justify-content: center; }
+  .series-dots { display: flex; justify-content: center; gap: var(--s-2); }
   .series-dots :global(span) {
-    width: 14px; height: 14px; border-radius: 50%;
-    background: var(--card); border: 1.5px solid var(--border);
-    transition: all 0.25s ease;
+    width: 12px; height: 12px; border-radius: var(--r-full);
+    background: var(--surface-2); box-shadow: inset 0 0 0 1.5px var(--line-strong);
+    transition: background var(--dur-2), transform var(--dur-2) var(--ease-out);
   }
-  .series-dots :global(span.hecha) { background: var(--green); border-color: var(--green); }
-  .series-dots :global(span.actual) { background: var(--accent); border-color: var(--accent); transform: scale(1.25); }
+  .series-dots :global(span.hecha) { background: var(--success); box-shadow: none; }
+  .series-dots :global(span.actual) { background: var(--accent); box-shadow: none; transform: scale(1.3); }
 
-  .estado { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .estado { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s-2); text-align: center; }
 
-  .voz-circulo {
-    width: 92px; height: 92px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 2.4rem; background: var(--accent-soft);
-    border: 2px solid var(--accent);
-  }
-  .voz-circulo.escuchando { animation: pulse-ring 1.6s ease-out infinite; }
-  .voz-msg { font-size: 1.15rem; }
-  .voz-msg b { color: var(--accent); }
-  #vozEstado { font-size: 0.85rem; text-align: center; }
+  .voz-msg { font-size: var(--t-lg); }
+  .voz-msg :global(b) { color: var(--fg); }
+  .voz-msg.escuchando { color: var(--success); }
+  .voz-estado { font-size: var(--t-sm); }
+  .voz-estado:empty { display: none; }
 
-  .config-inline { display: flex; width: 100%; gap: 10px; padding: 14px; }
-  .cfg { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-dim); }
-  .stepper { display: flex; align-items: center; gap: 14px; }
-  .stepper button {
-    width: 36px; height: 36px; border-radius: 12px;
-    background: var(--bg-soft); border: 1px solid var(--border);
-    font-size: 1.2rem; color: var(--text);
-  }
-  .stepper b { font-size: 1.2rem; min-width: 24px; text-align: center; }
-
-  .pasos { width: 100%; }
-  .pasos summary { cursor: pointer; font-weight: 600; color: var(--text-dim); }
-  .btn-leer { margin-top: 12px; }
-  .btn-leer.leyendo { border-color: var(--blue); color: var(--blue); }
-  .pasos ol { margin: 12px 0 0 20px; display: flex; flex-direction: column; gap: 8px; color: var(--text-dim); font-size: 0.92rem; line-height: 1.5; }
-
-  #estCuenta { padding: 40px 0; gap: 6px; }
-  .cuenta-num {
-    font-size: 8.5rem; font-weight: 800; line-height: 1;
-    color: var(--accent); font-variant-numeric: tabular-nums;
-  }
-  .cuenta-num.pop { animation: cuenta-pop 0.55s ease; }
-  .cuenta-msg { font-size: 1rem; color: var(--text-dim); letter-spacing: 0.14em; text-transform: uppercase; }
+  /* ---- cuenta atrás ---- */
+  .cuenta-num { font-size: var(--t-display); font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; color: var(--accent); }
+  .cuenta-num.pop { animation: cuenta-pop 0.55s var(--ease-out); }
+  .cuenta-msg { font-size: var(--t-sm); letter-spacing: 0.14em; text-transform: uppercase; color: var(--fg-muted); }
   @keyframes cuenta-pop {
     from { transform: scale(1.6); opacity: 0.2; }
     to { transform: scale(1); opacity: 1; }
   }
 
-  .modal-fondo {
-    position: fixed; inset: 0; z-index: 100;
-    background: rgba(5, 6, 10, 0.75); backdrop-filter: blur(6px);
-    display: flex; align-items: center; justify-content: center; padding: 24px;
-    animation: rise 0.2s ease both;
+  /* ---- timer: tan grande como quepa; el número escala con el círculo ---- */
+  .timer-wrap {
+    position: relative;
+    width: min(70vmin, 420px, 42svh);
+    aspect-ratio: 1;
+    container-type: inline-size;
+    border-radius: var(--r-full);
   }
-  .modal {
-    width: 100%; max-width: 380px;
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 22px; padding: 26px;
-    display: flex; flex-direction: column; gap: 14px; text-align: center;
-    animation: rise 0.25s ease both;
-  }
-  .modal-emoji { font-size: 2.6rem; }
-  .modal h2 { font-size: 1.2rem; }
-  .modal p { font-size: 0.92rem; line-height: 1.5; }
-  .peligro-btn { background: #d92d20; box-shadow: 0 8px 24px rgba(217, 45, 32, 0.35); }
-
-  .timer-wrap { position: relative; width: min(78vw, 320px); aspect-ratio: 1; cursor: pointer; }
   .timer-svg { width: 100%; height: 100%; transform: rotate(-90deg); }
-  .t-bg { fill: none; stroke: var(--card); stroke-width: 10; }
+  .t-bg { fill: none; stroke: var(--surface-2); stroke-width: 10; }
   .t-fg {
     fill: none; stroke: var(--accent); stroke-width: 10; stroke-linecap: round;
     stroke-dasharray: 552.9; stroke-dashoffset: 0;
-    transition: stroke-dashoffset 0.95s linear, stroke 0.3s;
+    transition: stroke-dashoffset 0.95s linear, stroke var(--dur-2);
   }
-  .timer-wrap.descanso .t-fg { stroke: var(--amber); }
-  .timer-wrap.pausado .t-fg { stroke: var(--text-dim); }
-  .timer-centro {
-    position: absolute; inset: 0;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
-  }
-  .t-fase { font-size: 0.85rem; font-weight: 700; letter-spacing: 0.14em; color: var(--text-dim); }
-  .timer-wrap.descanso .t-fase { color: var(--amber); }
-  .t-num { font-size: 3.6rem; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
-  .t-hint { font-size: 0.72rem; }
+  .timer-wrap.descanso .t-fg { stroke: var(--warning); }
+  .timer-wrap.pausado .t-fg { stroke: var(--fg-subtle); }
+  .timer-centro { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s-1); }
+  .t-fase { font-size: min(var(--t-sm), 6cqi); font-weight: 700; letter-spacing: 0.14em; color: var(--fg-muted); }
+  .timer-wrap.descanso .t-fase { color: var(--warning); }
+  .t-num { font-size: min(var(--t-display), 26cqi); font-weight: 800; line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .timer-wrap.pausado .t-num { color: var(--fg-muted); }
+  .t-hint { min-height: 1lh; font-size: var(--t-xs); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--fg-muted); }
 
-  .fin { display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; padding-top: 40px; }
-  .fin-emoji { font-size: 4.5rem; animation: rise 0.5s ease both; }
-  .fin h1 { font-size: 1.7rem; }
+  /* ---- barra de acción ---- */
+  .barra-accion {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    margin-inline: calc(-1 * var(--s-4));
+    padding: var(--s-3) var(--s-4) calc(var(--s-3) + env(safe-area-inset-bottom, 0px));
+    margin-bottom: calc(-1 * var(--shell-bottom));
+    background: var(--bar-bg);
+    backdrop-filter: blur(14px);
+    border-top: 1px solid var(--line);
+  }
+  .barra-fila { display: none; align-items: center; gap: var(--s-2); }
+  /* El botón principal cede ancho antes que empujar el micrófono fuera (320 px) */
+  .barra-fila .btn:not(.btn-sm) { flex: 1; min-width: 0; padding-inline: var(--s-3); }
+  #player[data-fase='espera'] #barEspera,
+  #player:is([data-fase='trabajo'], [data-fase='descanso']) #barTimer { display: flex; }
+  #player:is([data-fase='cuenta'], [data-fase='fin']) .barra-accion { display: none; }
+
+  .mic[aria-pressed='true'] { color: var(--success); box-shadow: inset 0 0 0 1.5px var(--success); }
+
+  /* ---- paneles ---- */
+  .cfg { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); font-size: var(--t-sm); color: var(--fg-muted); }
+  .nota { font-size: var(--t-xs); }
+  .btn-leer { align-self: flex-start; }
+  .btn-leer.leyendo { color: var(--focus); box-shadow: inset 0 0 0 1px var(--focus); }
+  .pasos { display: flex; flex-direction: column; gap: var(--s-2); padding-left: var(--s-5); font-size: var(--t-sm); color: var(--fg-muted); }
+
+  /* ---- final ---- */
+  #vistaFin { flex: 1; display: flex; align-items: center; }
+  #vistaFin.oculto { display: none; }
+  .fin { width: 100%; display: flex; flex-direction: column; align-items: center; gap: var(--s-4); text-align: center; }
+  .fin-emoji { font-size: var(--t-display); line-height: 1; animation: aparecer var(--dur-3) var(--ease-out) both; }
+  .fin h2 { font-size: var(--t-xl); }
+
+  /* ---- dos paneles: móvil tumbado (apoyado en el suelo) y escritorio ----
+     Ilustración a la izquierda; ejercicio, timer y acciones a la derecha. */
+  @media (orientation: landscape) and (max-height: 540px), (min-width: 900px) and (min-height: 560px) {
+    /* Alto fijo (no mínimo): así las filas son definidas y el timer puede
+       medirse contra el hueco real que le queda */
+    #player {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      column-gap: var(--s-5);
+      height: calc(100svh - var(--shell-top) - var(--shell-bottom));
+      min-height: 0;
+    }
+    .cabecera { grid-column: 1 / -1; }
+    .escena { display: contents; }
+    .media { grid-column: 1; grid-row: 2 / 4; display: flex; align-items: center; justify-content: center; min-height: 0; }
+    /* Marco cuadrado centrado (se achata si falta alto). Los GIF del dataset
+       son de 180×180: más allá de 2× (360 px) solo se ven borrosos */
+    .media .media-frame,
+    #player:is([data-fase='cuenta'], [data-fase='trabajo'], [data-fase='descanso']) .media .media-frame {
+      flex: none; width: min(100%, 440px); aspect-ratio: 1; height: auto; max-height: 100%; align-items: center;
+    }
+    .media img { width: 100%; height: 100%; max-width: 360px; max-height: 360px; }
+    .info { grid-column: 2; grid-row: 2; min-height: 0; }
+    .barra-accion { grid-column: 2; grid-row: 3; margin-inline: 0; border-top: none; border-radius: var(--r-lg) var(--r-lg) 0 0; }
+    #vistaFin { grid-column: 1 / -1; grid-row: 2 / 4; }
+    #estTimer { min-height: 0; container-type: size; }
+    .timer-wrap { width: min(100cqw, 100cqh, 460px); }
+  }
+
+  /* Solo en el móvil tumbado: a lo ancho de la pantalla y, con el tiempo
+     corriendo, sin cabecera ni título (la ilustración ya dice qué ejercicio es)
+     para darle todo el alto al timer */
+  @media (orientation: landscape) and (max-height: 540px) {
+    :global(.shell:has(> #player)) { max-width: none; }
+    #player:is([data-fase='trabajo'], [data-fase='descanso']) .cabecera,
+    #player:is([data-fase='trabajo'], [data-fase='descanso']) .ex-titulo { display: none; }
+  }
 </style>
 
 <script>
@@ -242,6 +291,10 @@ import Base from '../layouts/Base.astro';
   import { soportaVoz, crearEscucha, vozDe } from '../lib/voice.js';
   import { soportaTTS, leer, callar } from '../lib/tts.js';
   import { mediaUrl, precargar } from '../lib/media.js';
+  import { segundosPorSerie as calcSegundosPorSerie } from '../lib/plan.js';
+  import { musculo, equipamiento } from '../lib/textos.js';
+  import { conectarStepper, conectarSheet } from '../lib/ui.js';
+  import { icono, conIcono } from '../lib/iconos.js';
   import { navigate } from 'astro:transitions/client';
 
   document.addEventListener('astro:page-load', () => {
@@ -262,7 +315,8 @@ import Base from '../layouts/Base.astro';
       return;
     }
     const voz = vozDe(perfil.idioma);
-    $('vozPalabra').textContent = `«${voz.palabra}»`;
+    const sheetAjustes = conectarSheet($('sheetAjustes'));
+    const sheetPasos = conectarSheet($('sheetPasos'));
 
     const settings = getSettings();
     const CIRC = 2 * Math.PI * 88; // circunferencia del arco del timer
@@ -285,7 +339,17 @@ import Base from '../layouts/Base.astro';
     let escucha = null;
     let wakeLock = null;
 
-    const segundosPorSerie = () => Math.max(10, Math.round((st.minPorEjercicio * 60) / st.series));
+    // Minutos y series se ajustan aquí mismo y se guardan como ajuste global
+    const alAjustar = (campo) => (valor) => {
+      st[campo] = valor;
+      sonidoTap();
+      saveSettings({ ...getSettings(), minPorEjercicio: st.minPorEjercicio, series: st.series });
+      renderDots();
+    };
+    const fijarMin = conectarStepper($('stMin'), { min: 1, max: 10, valor: st.minPorEjercicio, onCambio: alAjustar('minPorEjercicio') });
+    const fijarSer = conectarStepper($('stSer'), { min: 1, max: 8, valor: st.series, onCambio: alAjustar('series') });
+
+    const segundosPorSerie = () => calcSegundosPorSerie(st.minPorEjercicio, st.series);
     const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
     // ---------- render ----------
@@ -298,11 +362,11 @@ import Base from '../layouts/Base.astro';
       $('exGif').src = mediaUrl(ex.gif);
       $('exNombre').textContent = ex.name;
       $('exTags').innerHTML = `
-        <span class="tag accent">${ex.target}</span>
-        <span class="tag blue">${ex.equipment}</span>`;
+        <span class="tag">${musculo(ex.target)}</span>
+        <span class="tag">${equipamiento(ex.equipment)}</span>`;
       $('exPasos').innerHTML = ex.steps.map((s) => `<li>${s}</li>`).join('');
-      $('cfgMin').textContent = String(st.minPorEjercicio);
-      $('cfgSer').textContent = String(st.series);
+      fijarMin(st.minPorEjercicio);
+      fijarSer(st.series);
       renderDots();
       // El GIF del siguiente ejercicio se descarga mientras haces este
       const sig = rutina[st.idx + 1];
@@ -334,15 +398,14 @@ import Base from '../layouts/Base.astro';
 
     function mostrarEstado(fase) {
       st.fase = fase;
+      root.dataset.fase = fase; // el CSS decide barra, tamaños y qué se ve
       $('estEspera').classList.toggle('oculto', fase !== 'espera');
       $('estCuenta').classList.toggle('oculto', fase !== 'cuenta');
       $('estTimer').classList.toggle('oculto', fase !== 'trabajo' && fase !== 'descanso');
-      if (fase === 'espera') {
-        const puedeVoz = soportaVoz();
-        $('btnMic').classList.toggle('oculto', !puedeVoz || !!escucha);
-        if (!puedeVoz) $('vozEstado').textContent = 'Tu navegador no soporta voz: usa el botón';
-      }
     }
+
+    // Texto para lectores de pantalla en cada cambio de fase
+    const anunciar = (texto) => { $('anuncio').textContent = texto; };
 
     // ---------- timer ----------
     function arrancarCuenta(segundos, fase) {
@@ -375,7 +438,8 @@ import Base from '../layouts/Base.astro';
       $('tArco').style.strokeDashoffset = String(CIRC * (1 - st.restante / st.total));
       $('timerWrap').classList.toggle('descanso', st.fase === 'descanso');
       $('timerWrap').classList.toggle('pausado', st.pausado);
-      $('tHint').textContent = st.pausado ? 'pausado · toca para seguir' : 'toca para pausar';
+      $('tHint').textContent = st.pausado ? 'en pausa' : '';
+      $('btnPausa').innerHTML = st.pausado ? conIcono('play', 'Seguir') : conIcono('pause', 'Pausar');
       renderDots();
       persistir();
     }
@@ -387,10 +451,12 @@ import Base from '../layouts/Base.astro';
           siguienteEjercicio(); // suena el cambio de ejercicio (o el fin)
         } else {
           sonidoFinSerie();
+          anunciar(`Descanso de ${st.descanso} segundos`);
           arrancarCuenta(st.descanso, 'descanso');
         }
       } else if (st.fase === 'descanso') {
         sonidoSerie();
+        anunciar(`Serie ${st.serie + 1} de ${st.series}`);
         arrancarCuenta(segundosPorSerie(), 'trabajo');
       }
     }
@@ -398,6 +464,8 @@ import Base from '../layouts/Base.astro';
     function empezarEjercicio() {
       if (st.fase !== 'espera') return;
       resetLectura();
+      sheetAjustes.cerrar();
+      sheetPasos.cerrar();
       initAudio();
       if (!st.sesionActiva) {
         st.sesionActiva = true;
@@ -438,6 +506,7 @@ import Base from '../layouts/Base.astro';
 
     function comenzarTrabajo() {
       sonidoInicio();
+      anunciar(`Serie 1 de ${st.series}`);
       mostrarEstado('trabajo');
       arrancarCuenta(segundosPorSerie(), 'trabajo');
     }
@@ -455,12 +524,14 @@ import Base from '../layouts/Base.astro';
       // El siguiente ejercicio siempre espera el comando de voz «ahora»
       renderEjercicio();
       persistir();
+      anunciar(`Siguiente ejercicio: ${rutina[st.idx].name}`);
       document.startViewTransition?.(() => {});
     }
 
     function terminar() {
       sonidoFin();
-      st.fase = 'fin';
+      mostrarEstado('fin');
+      anunciar('Entrenamiento completado');
       st.sesionActiva = false;
       clearSesion();
       quitarGuardia();
@@ -517,11 +588,11 @@ import Base from '../layouts/Base.astro';
       pausaPrevia = st.pausado;
       st.pausado = true; // congela el tiempo mientras decide
       if (st.fase === 'trabajo' || st.fase === 'descanso') pintarTimer();
-      $('modalSalir').classList.remove('oculto');
+      $('modalSalir').showModal();
     }
 
     function cerrarModalSalir() {
-      $('modalSalir').classList.add('oculto');
+      if ($('modalSalir').open) $('modalSalir').close();
       salirTrasConfirmar = null;
       st.pausado = pausaPrevia;
       if (st.fase === 'trabajo' || st.fase === 'descanso') pintarTimer();
@@ -530,7 +601,7 @@ import Base from '../layouts/Base.astro';
     function salirDeVerdad() {
       clearInterval(st.timerId);
       st.sesionActiva = false;
-      st.fase = 'fin';
+      mostrarEstado('fin');
       clearSesion();
       quitarGuardia();
       callar();
@@ -580,16 +651,18 @@ import Base from '../layouts/Base.astro';
 
       $('btnReanudarSi').addEventListener('click', () => {
         sonidoTap();
-        $('modalReanudar').classList.add('oculto');
+        $('modalReanudar').close();
         continuar();
       }, { once: true });
       $('btnReanudarNo').addEventListener('click', () => {
         sonidoTap();
         clearSesion();
-        $('modalReanudar').classList.add('oculto');
+        $('modalReanudar').close();
       }, { once: true });
 
-      $('modalReanudar').classList.remove('oculto');
+      // Escape no la cierra: hay que elegir una de las dos opciones
+      $('modalReanudar').addEventListener('cancel', (e) => e.preventDefault());
+      $('modalReanudar').showModal();
       return true;
     }
 
@@ -599,7 +672,7 @@ import Base from '../layouts/Base.astro';
     function resetLectura() {
       callar();
       leyendo = false;
-      $('btnLeer').textContent = '🔊 Escuchar instrucciones';
+      $('btnLeer').innerHTML = conIcono('volume', 'Escuchar instrucciones');
       $('btnLeer').classList.remove('leyendo');
     }
 
@@ -614,18 +687,35 @@ import Base from '../layouts/Base.astro';
       const micEstaba = !!escucha?.activo;
       if (micEstaba) escucha.stop();
       leyendo = true;
-      $('btnLeer').textContent = '⏹ Detener lectura';
+      $('btnLeer').innerHTML = conIcono('stop', 'Detener lectura');
       $('btnLeer').classList.add('leyendo');
       const texto = ex.steps.map((s, i) => `${i + 1}. ${s}`).join(' ');
       leer(texto, perfil.idioma, () => {
         leyendo = false;
-        $('btnLeer').textContent = '🔊 Escuchar instrucciones';
+        $('btnLeer').innerHTML = conIcono('volume', 'Escuchar instrucciones');
         $('btnLeer').classList.remove('leyendo');
         if (micEstaba && st.fase === 'espera') escucha.start();
       });
     });
 
     // ---------- voz ----------
+    // El botón del micrófono es un interruptor; su estado se refleja en él y en
+    // la línea de ayuda bajo el ejercicio.
+    function pintarVoz(estado) {
+      const on = estado === 'escuchando';
+      $('btnMic').setAttribute('aria-pressed', String(on));
+      $('btnMic').innerHTML = icono(on ? 'mic' : 'mic-off');
+      $('vozMsg').classList.toggle('escuchando', on);
+      $('vozMsg').innerHTML = on
+        ? `Di <b>«${voz.palabra}»</b> para empezar`
+        : 'Toca <b>Empezar</b> cuando estés en posición';
+      $('vozEstado').textContent =
+        estado === 'denegado' ? 'Micrófono denegado: usa el botón para empezar'
+        : estado === 'sin-soporte' ? ''
+        : on ? 'Escuchando…'
+        : `O activa el micrófono y di «${voz.palabra}»`;
+    }
+
     function activarMic() {
       initAudio();
       if (!escucha) {
@@ -634,29 +724,39 @@ import Base from '../layouts/Base.astro';
           onComando: () => {
             if (st.fase === 'espera') empezarEjercicio();
           },
-          onEstado: (e) => {
-            $('micDot').classList.toggle('on', e === 'escuchando');
-            $('vozCirculo').classList.toggle('escuchando', e === 'escuchando');
-            if (e === 'escuchando') $('vozEstado').textContent = `Escuchando… di «${voz.palabra}» cuando estés en posición`;
-            if (e === 'denegado') $('vozEstado').textContent = 'Micrófono denegado: usa el botón para empezar';
-          },
+          onEstado: pintarVoz,
         });
       }
       escucha?.start();
+    }
+
+    if (soportaVoz()) pintarVoz('apagado');
+    else {
       $('btnMic').classList.add('oculto');
+      pintarVoz('sin-soporte');
     }
 
     // ---------- eventos ----------
-    $('btnMic').addEventListener('click', () => { initAudio(); sonidoTap(); activarMic(); });
+    $('btnMic').addEventListener('click', () => {
+      initAudio();
+      sonidoTap();
+      if (escucha?.activo) escucha.stop();
+      else activarMic();
+    });
+    $('btnAjustar').addEventListener('click', () => { sonidoTap(); sheetAjustes.abrir(); });
+    $('btnPasos').addEventListener('click', () => { sonidoTap(); sheetPasos.abrir(); });
     $('btnManual').addEventListener('click', empezarEjercicio);
     $('btnSaltar').addEventListener('click', () => { sonidoTap(); siguienteEjercicio(); });
-    $('timerWrap').addEventListener('click', () => {
+    const alternarPausa = () => {
       if (st.fase === 'trabajo' || st.fase === 'descanso') {
         st.pausado = !st.pausado;
         sonidoTap();
         pintarTimer();
+        anunciar(st.pausado ? 'En pausa' : 'Seguimos');
       }
-    });
+    };
+    $('timerWrap').addEventListener('click', alternarPausa);
+    $('btnPausa').addEventListener('click', alternarPausa);
 
     // Botón «volver»: si hay entrenamiento en curso, pregunta antes de salir
     $('btnVolver').addEventListener('click', (e) => {
@@ -670,24 +770,14 @@ import Base from '../layouts/Base.astro';
     // Botones del modal de salida
     $('btnSalirSi').addEventListener('click', () => {
       const salir = salirTrasConfirmar;
-      $('modalSalir').classList.add('oculto');
+      $('modalSalir').close();
       salirTrasConfirmar = null;
       salir?.();
     });
     $('btnSalirNo').addEventListener('click', () => { sonidoTap(); cerrarModalSalir(); });
+    // Escape equivale a «Seguir entrenando»
+    $('modalSalir').addEventListener('cancel', (e) => { e.preventDefault(); cerrarModalSalir(); });
 
-    root.querySelectorAll('.stepper button').forEach((b) =>
-      b.addEventListener('click', () => {
-        const d = Number(b.dataset.d);
-        if (b.dataset.cfg === 'min') st.minPorEjercicio = Math.min(10, Math.max(1, st.minPorEjercicio + d));
-        else st.series = Math.min(8, Math.max(1, st.series + d));
-        sonidoTap();
-        $('cfgMin').textContent = String(st.minPorEjercicio);
-        $('cfgSer').textContent = String(st.series);
-        saveSettings({ ...getSettings(), minPorEjercicio: st.minPorEjercicio, series: st.series });
-        renderDots();
-      })
-    );
 
     // Limpieza al salir de la página (view transitions no recargan)
     document.addEventListener('astro:before-swap', () => {

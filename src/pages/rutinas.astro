@@ -1,144 +1,177 @@
 ---
 import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
 ---
-<Base title="Mis rutinas" nav="rutinas">
-  <div id="rutinas">
-    <header class="cab rise">
-      <div>
-        <p class="muted" id="saludo">Hola 👋</p>
-        <h1>Tu semana</h1>
-      </div>
+<Base title="Mis rutinas" nav="rutinas" ancho="ancho">
+  <div id="rutinas" class="rutinas">
+    <header class="cab">
+      <p class="muted" id="saludo">Hola 👋</p>
+      <h1>Tu semana</h1>
     </header>
 
-    <!-- Estado de hoy -->
-    <a class="hoy-card rise rise-1" id="hoyCard" href="#"></a>
+    <!-- Estado de hoy: si toca entrenar, es la acción principal de la pantalla -->
+    <a class="hoy-card" id="hoyCard" href="#"></a>
 
-    <!-- Estadísticas -->
-    <div class="stats rise rise-1">
-      <div class="stat card">
-        <b id="stRacha">0</b>
-        <span>🔥 racha</span>
+    <!-- Progreso: debajo de hoy en el móvil, columna lateral en escritorio -->
+    <aside class="lateral">
+      <div class="stats">
+        <div class="stat card"><b id="stRacha">0</b><span class="con-icono"><Icon nombre="flame" />racha</span></div>
+        <div class="stat card"><b id="stMes">0</b><span class="con-icono"><Icon nombre="calendar" />este mes</span></div>
+        <div class="stat card"><b id="stTotal">0</b><span class="con-icono"><Icon nombre="circle-check" />total</span></div>
       </div>
-      <div class="stat card">
-        <b id="stMes">0</b>
-        <span>📅 este mes</span>
-      </div>
-      <div class="stat card">
-        <b id="stTotal">0</b>
-        <span>✅ total</span>
-      </div>
-    </div>
 
-    <!-- Calendario del mes -->
-    <div class="card cal rise rise-2">
-      <div class="cal-head">
-        <h2 id="calTitulo">—</h2>
-        <span class="muted" id="calResumen"></span>
-      </div>
-      <div class="cal-grid cal-labels">
-        <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
-      </div>
-      <div class="cal-grid" id="calDias"></div>
-    </div>
+      <!-- En el móvil muestra solo la semana actual; «Ver el mes» lo despliega -->
+      <section class="card cal" id="cal">
+        <div class="cal-head">
+          <h2 id="calTitulo">—</h2>
+          <span class="muted" id="calResumen"></span>
+        </div>
+        <div class="cal-grid cal-labels" aria-hidden="true">
+          <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
+        </div>
+        <div class="cal-grid" id="calDias"></div>
+        <button class="btn btn-ghost btn-sm cal-toggle" id="calToggle" aria-expanded="false" aria-controls="calDias">Ver el mes</button>
+      </section>
+    </aside>
 
-    <h2 class="sub rise rise-3">Rutinas</h2>
-    <div class="lista" id="listaDias"></div>
+    <section class="semana">
+      <h2 class="eyebrow">Rutinas</h2>
+      <div class="lista" id="listaDias"></div>
+    </section>
   </div>
 </Base>
 
 <style>
-  .cab { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
-  .cab h1 { font-size: 1.7rem; }
+  /* Móvil: una columna. ≥ 900: hoy + rutinas a la izquierda, progreso a la
+     derecha (fijo al hacer scroll). */
+  .rutinas {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s-4);
+    grid-template-areas: 'cab' 'hoy' 'lateral' 'semana';
+  }
+  .cab { grid-area: cab; display: flex; flex-direction: column; gap: var(--s-1); }
+  .hoy-card { grid-area: hoy; }
+  .lateral { grid-area: lateral; display: flex; flex-direction: column; gap: var(--s-4); }
+  .semana { grid-area: semana; display: flex; flex-direction: column; gap: var(--s-3); }
 
+  @media (min-width: 900px) {
+    .rutinas {
+      grid-template-columns: minmax(0, 1.7fr) minmax(300px, 1fr);
+      grid-template-rows: auto auto 1fr;
+      grid-template-areas: 'cab cab' 'hoy lateral' 'semana lateral';
+      column-gap: var(--s-6);
+      align-items: start;
+    }
+    .lateral { position: sticky; top: var(--shell-top); }
+  }
+
+  /* ---- hoy ---- */
   .hoy-card {
     display: block;
-    border-radius: var(--radius);
-    padding: 18px 20px;
-    margin-bottom: 14px;
-    border: 1px solid var(--border);
-    background: var(--card);
-    transition: transform 0.18s ease;
+    padding: var(--s-4) var(--s-5);
+    border-radius: var(--r-lg);
+    background: var(--surface-1);
+    border: 1px solid var(--line);
+    transition: transform var(--dur-1) var(--ease-out);
   }
   .hoy-card:active { transform: scale(0.98); }
-  .hoy-card.pendiente { border-color: var(--accent); background: linear-gradient(135deg, var(--accent-soft), var(--card) 60%); }
-  .hoy-card.cumplido { border-color: var(--green); background: linear-gradient(135deg, var(--green-soft), var(--card) 60%); }
-  .hoy-card :global(.hc-titulo) { font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
-  .hoy-card :global(.hc-sub) { color: var(--text-dim); font-size: 0.88rem; margin-top: 4px; }
+  .hoy-card.pendiente { background: var(--accent); border-color: transparent; color: var(--accent-fg); }
+  .hoy-card.cumplido { background: var(--success-soft); border-color: var(--success); }
+  .hoy-card :global(.hc-titulo) { display: flex; align-items: center; gap: var(--s-2); font-size: var(--t-lg); font-weight: 700; }
+  .hoy-card :global(.hc-sub) { margin-top: var(--s-1); font-size: var(--t-sm); color: var(--fg-muted); }
+  .hoy-card.pendiente :global(.hc-sub) { color: inherit; opacity: 0.85; }
 
-  .stats { display: flex; gap: 10px; margin-bottom: 14px; }
-  .stat { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 14px 8px; }
-  .stat b { font-size: 1.5rem; color: var(--accent); font-variant-numeric: tabular-nums; }
-  .stat span { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+  /* ---- estadísticas ---- */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-2); }
+  .stat { display: flex; flex-direction: column; align-items: center; gap: var(--s-1); padding: var(--s-3) var(--s-2); text-align: center; }
+  .stat b { font-size: var(--t-xl); line-height: 1; font-variant-numeric: tabular-nums; }
+  .stat span { gap: var(--s-1); font-size: var(--t-xs); color: var(--fg-muted); }
 
-  .cal { margin-bottom: 22px; }
-  .cal-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
-  .cal-head h2 { font-size: 1.05rem; text-transform: capitalize; }
-  .cal-head span { font-size: 0.8rem; }
-  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
-  .cal-labels { margin-bottom: 6px; }
-  .cal-labels span { text-align: center; font-size: 0.68rem; font-weight: 700; color: var(--text-dim); }
+  /* ---- calendario ---- */
+  .cal-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: var(--s-2); margin-bottom: var(--s-3); }
+  .cal-head h2 { font-size: var(--t-md); }
+  .cal-head span { font-size: var(--t-sm); }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--s-1); }
+  .cal-labels { margin-bottom: var(--s-1); }
+  .cal-labels span { text-align: center; font-size: var(--t-xs); font-weight: 700; color: var(--fg-subtle); }
 
   .cal-grid :global(.cd) {
-    aspect-ratio: 1;
-    display: flex; align-items: center; justify-content: center;
-    border-radius: 10px;
-    font-size: 0.82rem; font-weight: 600;
-    color: var(--text-dim);
     position: relative;
-    background: var(--bg-soft);
+    display: flex; align-items: center; justify-content: center;
+    aspect-ratio: 1;
+    border-radius: var(--r-sm);
+    background: var(--surface-2);
+    font-size: var(--t-sm); font-weight: 600;
+    color: var(--fg-muted);
   }
   .cal-grid :global(.cd.vacio) { background: none; }
   .cal-grid :global(.cd.prog)::after {
-    content: ''; position: absolute; bottom: 5px;
-    width: 4px; height: 4px; border-radius: 50%; background: var(--text-dim); opacity: 0.6;
+    content: ''; position: absolute; bottom: 12%;
+    width: 4px; height: 4px; border-radius: var(--r-full); background: var(--fg-subtle);
   }
-  .cal-grid :global(.cd.hecho) { background: var(--green); color: #06281a; font-weight: 800; }
+  .cal-grid :global(.cd.hecho) { background: var(--success); color: var(--success-fg); font-weight: 800; }
   .cal-grid :global(.cd.hecho)::after { display: none; }
-  .cal-grid :global(.cd.fallado) { color: var(--accent); opacity: 0.75; }
-  .cal-grid :global(.cd.hoy) { outline: 2px solid var(--accent); outline-offset: 1px; color: var(--text); }
-  .cal-grid :global(.cd.futuro) { opacity: 0.4; }
+  /* Fallado: sin castigo visual, solo más apagado que el resto */
+  .cal-grid :global(.cd.fallado) { background: transparent; box-shadow: inset 0 0 0 1px var(--line); color: var(--fg-subtle); }
+  .cal-grid :global(.cd.hoy) { box-shadow: inset 0 0 0 2px var(--fg); color: var(--fg); }
+  .cal-grid :global(.cd.futuro) { background: transparent; color: var(--fg-subtle); }
 
-  .sub { font-size: 1.05rem; margin-bottom: 12px; color: var(--text-dim); }
-  .lista { display: flex; flex-direction: column; gap: 14px; }
+  .cal-toggle { width: 100%; margin-top: var(--s-2); }
+  /* Por debajo de 900 px el mes plegado enseña solo la fila de esta semana */
+  @media (max-width: 899.98px) {
+    .cal:not(.expandido) .cal-grid :global(.cd:not(.sem)) { display: none; }
+  }
+  @media (min-width: 900px) {
+    .cal-toggle { display: none; }
+  }
 
+  /* ---- rutinas de la semana ---- */
+  .lista { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-3); }
+  @media (min-width: 600px) {
+    .lista { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
   .lista :global(.dia-card) {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
     overflow: hidden;
-    transition: border-color 0.18s ease, background 0.18s ease;
+    border-radius: var(--r-lg);
+    background: var(--surface-1);
+    border: 1px solid var(--line);
   }
-  .lista :global(.dia-main) { display: block; padding: 18px; transition: transform 0.18s ease; }
-  .lista :global(.dia-main:active) { transform: scale(0.98); }
-  .lista :global(.dia-editar) {
-    display: block; padding: 11px; text-align: center;
-    border-top: 1px solid var(--border);
-    font-size: 0.82rem; font-weight: 600; color: var(--text-dim);
-    transition: color 0.15s, background 0.15s;
-  }
-  .lista :global(.dia-editar:active) { color: var(--accent); background: var(--accent-soft); }
-  .lista :global(.dia-card.hoy) { border-color: var(--accent); background: linear-gradient(140deg, var(--accent-soft), var(--card) 55%); }
+  .lista :global(.dia-card.hoy) { border-color: var(--line-strong); }
+  .lista :global(.dia-main) { display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-4); }
+  .lista :global(.dia-top) { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--s-1) var(--s-3); }
+  .lista :global(.dia-top h3) { display: flex; align-items: center; gap: var(--s-2); font-size: var(--t-lg); }
+  .lista :global(.dia-top .tag) { color: var(--fg); }
+  .lista :global(.dia-meta) { font-size: var(--t-sm); color: var(--fg-muted); }
 
-  .lista :global(.dia-top) { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-  .lista :global(.dia-top h2) { font-size: 1.15rem; display: flex; align-items: center; gap: 10px; }
-  .lista :global(.dia-meta) { display: flex; gap: 8px; }
-
-  .lista :global(.thumbs) { display: flex; gap: 8px; overflow: hidden; }
-  .lista :global(.thumbs img) {
-    width: 64px; height: 64px; object-fit: cover;
-    border-radius: 12px; background: #fff; flex-shrink: 0;
-  }
+  /* Hasta 4 miniaturas + «+N» en 5 columnas: caben a cualquier ancho */
+  .lista :global(.thumbs) { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--s-2); }
+  .lista :global(.thumbs .media-frame) { aspect-ratio: 1; }
   .lista :global(.thumbs .mas) {
-    width: 64px; height: 64px; border-radius: 12px; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
-    background: var(--bg-soft); color: var(--text-dim); font-weight: 700; font-size: 0.9rem;
+    aspect-ratio: 1; border-radius: var(--r-md);
+    background: var(--surface-2); color: var(--fg-muted);
+    font-size: var(--t-sm); font-weight: 700;
   }
-  .lista :global(.hecho-hoy) { margin-top: 10px; font-size: 0.85rem; color: var(--green); font-weight: 600; }
+  .lista :global(.hecho-hoy) { font-size: var(--t-sm); font-weight: 600; color: var(--success); }
+  .lista :global(.dia-editar) {
+    display: flex; align-items: center; justify-content: center;
+    min-height: var(--tap);
+    border-top: 1px solid var(--line);
+    font-size: var(--t-sm); font-weight: 600; color: var(--fg-muted);
+  }
+  @media (hover: hover) {
+    .lista :global(.dia-main:hover) { background: var(--surface-2); }
+    .lista :global(.dia-editar:hover) { color: var(--fg); background: var(--surface-2); }
+  }
 </style>
 
 <script>
   import { getProfile, getRoutines, getSettings, getHistory, calcularRacha, DIAS, diaHoy, diaDe } from '../lib/db.js';
   import { mediaUrl, precargar } from '../lib/media.js';
+  import { duracionEstimadaMin } from '../lib/plan.js';
+  import { escapar, mayusInicial } from '../lib/textos.js';
+  import { icono } from '../lib/iconos.js';
   import { navigate } from 'astro:transitions/client';
 
   document.addEventListener('astro:page-load', () => {
@@ -160,7 +193,8 @@ import Base from '../layouts/Base.astro';
     const hechos = new Set(historial.map((h) => new Date(h.fecha).toDateString()));
 
     // ---- saludo + stats ----
-    root.querySelector('#saludo').textContent = `Hola, ${perfil.nombre ?? 'crack'} 👋 · ${perfil.tiempoMin} min al día`;
+    const nombre = escapar(perfil.nombre ?? '');
+    root.querySelector('#saludo').textContent = `Hola, ${perfil.nombre || 'crack'} 👋`;
     const esteMes = historial.filter((h) => {
       const f = new Date(h.fecha);
       return f.getMonth() === ahora.getMonth() && f.getFullYear() === ahora.getFullYear();
@@ -174,20 +208,20 @@ import Base from '../layouts/Base.astro';
     const programadoHoy = perfil.dias.includes(hoy);
     const cumplidoHoy = hechos.has(hoyStr);
     if (cumplidoHoy) {
-      hoyCard.className = 'hoy-card cumplido rise rise-1';
+      hoyCard.className = 'hoy-card cumplido';
       hoyCard.href = '/rutinas';
-      hoyCard.innerHTML = `<div class="hc-titulo">🏆 ¡Objetivo de hoy cumplido!</div>
-        <div class="hc-sub">Ya entrenaste hoy, ${perfil.nombre ?? ''}. Descansa o repite si te sobran ganas 💪</div>`;
+      hoyCard.innerHTML = `<div class="hc-titulo">${icono('trophy')} ¡Objetivo de hoy cumplido!</div>
+        <div class="hc-sub">Ya entrenaste hoy${nombre ? `, ${nombre}` : ''}. Descansa o repite si te sobran ganas 💪</div>`;
     } else if (programadoHoy) {
       const n = (rutinas[hoy] || []).length;
-      hoyCard.className = 'hoy-card pendiente rise rise-1';
+      hoyCard.className = 'hoy-card pendiente';
       hoyCard.href = `/entrenar?dia=${hoy}`;
-      hoyCard.innerHTML = `<div class="hc-titulo">▶ Hoy toca entrenar</div>
-        <div class="hc-sub">${n} ejercicios · ~${n * settings.minPorEjercicio} min. ¡Dale, son solo ${perfil.tiempoMin} minutos!</div>`;
+      hoyCard.innerHTML = `<div class="hc-titulo">${icono('play')} Hoy toca entrenar</div>
+        <div class="hc-sub">${n} ejercicios · ~${duracionEstimadaMin(n, settings)} min con descansos. ¡Dale!</div>`;
     } else {
-      hoyCard.className = 'hoy-card rise rise-1';
+      hoyCard.className = 'hoy-card';
       hoyCard.href = '/rutinas';
-      hoyCard.innerHTML = `<div class="hc-titulo">😌 Hoy es día de descanso</div>
+      hoyCard.innerHTML = `<div class="hc-titulo">${icono('moon')} Hoy es día de descanso</div>
         <div class="hc-sub">Tu próximo entrenamiento aparece abajo. ¿Ganas extra? Toca cualquier rutina.</div>`;
     }
 
@@ -196,16 +230,21 @@ import Base from '../layouts/Base.astro';
     const m = ahora.getMonth();
     const diasEnMes = new Date(y, m + 1, 0).getDate();
     const offset = (new Date(y, m, 1).getDay() + 6) % 7; // lunes = 0
-    root.querySelector('#calTitulo').textContent = ahora.toLocaleDateString('es', { month: 'long', year: 'numeric' });
+    root.querySelector('#calTitulo').textContent = mayusInicial(ahora.toLocaleDateString('es', { month: 'long', year: 'numeric' }));
 
     const calBox = root.querySelector('#calDias');
     let cumplidosMes = 0;
     let programadosMes = 0;
-    let html = '<span class="cd vacio"></span>'.repeat(offset);
+    // Los días anteriores a crear el plan no cuentan como fallados
+    const inicioPlan = perfil.creado ? new Date(new Date(perfil.creado).toDateString()) : null;
+    // Fila de la semana actual (lunes = columna 0): la vista plegada solo enseña esa
+    const filaHoy = Math.floor((offset + ahora.getDate() - 1) / 7);
+    const deEstaSemana = (pos) => (Math.floor(pos / 7) === filaHoy ? ' sem' : '');
+    let html = Array.from({ length: offset }, (_, pos) => `<span class="cd vacio${deEstaSemana(pos)}"></span>`).join('');
     for (let d = 1; d <= diasEnMes; d++) {
       const fecha = new Date(y, m, d);
       const esFuturo = fecha > ahora && fecha.toDateString() !== hoyStr;
-      const programado = perfil.dias.includes(diaDe(fecha));
+      const programado = perfil.dias.includes(diaDe(fecha)) && !(inicioPlan && fecha < inicioPlan);
       const hecho = hechos.has(fecha.toDateString());
       if (programado && !esFuturo) programadosMes++;
       if (hecho) cumplidosMes++;
@@ -216,11 +255,19 @@ import Base from '../layouts/Base.astro';
         !hecho && programado && !esFuturo && fecha.toDateString() !== hoyStr ? 'fallado' : '',
         fecha.toDateString() === hoyStr ? 'hoy' : '',
         esFuturo ? 'futuro' : '',
-      ].filter(Boolean).join(' ');
+      ].filter(Boolean).join(' ') + deEstaSemana(offset + d - 1);
       html += `<span class="${cls}">${d}</span>`;
     }
     calBox.innerHTML = html;
     root.querySelector('#calResumen').textContent = `${cumplidosMes}/${programadosMes} días cumplidos`;
+
+    const cal = root.querySelector('#cal');
+    const calToggle = root.querySelector('#calToggle');
+    calToggle.addEventListener('click', () => {
+      const abierto = cal.classList.toggle('expandido');
+      calToggle.setAttribute('aria-expanded', String(abierto));
+      calToggle.textContent = abierto ? 'Ver solo esta semana' : 'Ver el mes';
+    });
 
     // ---- lista de rutinas ----
     const lista = root.querySelector('#listaDias');
@@ -231,37 +278,33 @@ import Base from '../layouts/Base.astro';
       return rank(a) - rank(b);
     });
 
-    orden.forEach((diaId, i) => {
+    orden.forEach((diaId) => {
       const info = DIAS.find((d) => d.id === diaId);
       const ejercicios = rutinas[diaId] || [];
       const esHoy = diaId === hoy;
       const hechoHoy = esHoy && cumplidoHoy;
-      const totalMin = ejercicios.length * settings.minPorEjercicio;
+      const totalMin = duracionEstimadaMin(ejercicios.length, settings);
 
       const card = document.createElement('div');
-      card.className = `dia-card rise ${esHoy ? 'hoy' : ''}`;
-      card.style.animationDelay = `${0.2 + i * 0.06}s`;
+      card.className = `dia-card ${esHoy ? 'hoy' : ''}`;
       card.style.viewTransitionName = `dia-${diaId}`;
 
       const thumbs = ejercicios
         .slice(0, 4)
-        .map((e) => `<img src="${mediaUrl(e.image)}" alt="" loading="lazy" decoding="async" />`)
+        .map((e) => `<div class="media-frame"><img src="${mediaUrl(e.image)}" alt="" loading="lazy" decoding="async" /></div>`)
         .join('');
       const extra = ejercicios.length > 4 ? `<div class="mas">+${ejercicios.length - 4}</div>` : '';
 
       card.innerHTML = `
         <a class="dia-main" href="/entrenar?dia=${diaId}">
           <div class="dia-top">
-            <h2>${info?.label ?? diaId} ${esHoy ? '<span class="tag accent">Hoy</span>' : ''}</h2>
-            <div class="dia-meta">
-              <span class="tag blue">${ejercicios.length} ejerc.</span>
-              <span class="tag green">~${totalMin} min</span>
-            </div>
+            <h3>${info?.label ?? diaId} ${esHoy ? '<span class="tag">Hoy</span>' : ''}</h3>
+            <span class="dia-meta">${ejercicios.length} ejercicios · ~${totalMin} min</span>
           </div>
           <div class="thumbs">${thumbs}${extra}</div>
-          ${hechoHoy ? '<div class="hecho-hoy">✓ Completado hoy</div>' : ''}
+          ${hechoHoy ? `<div class="hecho-hoy con-icono">${icono('circle-check')} Completado hoy</div>` : ''}
         </a>
-        <a class="dia-editar" href="/editar?dia=${diaId}">✏️ Editar rutina</a>
+        <a class="dia-editar con-icono" href="/editar?dia=${diaId}">${icono('pencil')} Editar rutina</a>
       `;
       lista.appendChild(card);
     });

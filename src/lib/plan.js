@@ -10,6 +10,33 @@ const shuffle = (arr) => {
   return a;
 };
 
+// Estiramientos y posturas de yoga: sirven para calentar o estirar, no como
+// ejercicio principal de 3 minutos con series.
+export const esEstiramiento = (e) => /stretch|\bpose\b/i.test(e.name);
+
+// Duración de cada serie de trabajo: los minutos del ejercicio repartidos
+// entre las series (mínimo 10 s). La usa el player y la estimación.
+export const segundosPorSerie = (minPorEjercicio, series) =>
+  Math.max(10, Math.round((minPorEjercicio * 60) / series));
+
+const CUENTA_PREVIA_SEG = 3;
+
+// Segundos reales de un ejercicio: cuenta atrás + series de trabajo + descansos entre series.
+export function segundosPorEjercicio({ minPorEjercicio, series, descansoSeg }) {
+  return CUENTA_PREVIA_SEG + series * segundosPorSerie(minPorEjercicio, series) + (series - 1) * descansoSeg;
+}
+
+export const duracionEstimadaMin = (numEjercicios, settings) =>
+  Math.round((numEjercicios * segundosPorEjercicio(settings)) / 60);
+
+// Intensidad inicial según la edad: más descanso a partir de los 50 y una
+// serie menos a partir de los 65. Solo se aplica al crear el primer plan.
+export function ajustesPorEdad(edad, base) {
+  if (edad >= 65) return { ...base, series: Math.min(base.series, 3), descansoSeg: Math.max(base.descansoSeg, 15) };
+  if (edad >= 50) return { ...base, descansoSeg: Math.max(base.descansoSeg, 10) };
+  return base;
+}
+
 export async function cargarEjercicios(idioma = 'es') {
   const res = await fetch(`/data/exercises.${idioma}.json`);
   if (!res.ok) return (await fetch('/data/exercises.es.json')).json();
@@ -41,8 +68,8 @@ export function estructurasPermitidas(perfil) {
 }
 
 export function generarRutinas(perfil, ejercicios, settings) {
-  const porEjercicio = settings.minPorEjercicio || 3;
-  const cantidad = Math.max(3, Math.round(perfil.tiempoMin / porEjercicio));
+  // Cuántos ejercicios caben en el tiempo del perfil, contando los descansos
+  const cantidad = Math.max(3, Math.round((perfil.tiempoMin * 60) / segundosPorEjercicio(settings)));
   const permitido = equipoPermitido(perfil);
   const estructuras = estructurasPermitidas(perfil);
 
@@ -53,17 +80,14 @@ export function generarRutinas(perfil, ejercicios, settings) {
     return true;
   };
 
-  const disponibles = ejercicios.filter(sePuede);
+  const principales = ejercicios.filter((e) => !esEstiramiento(e));
+  const disponibles = principales.filter(sePuede);
 
   const pools = {};
   for (const cat of perfil.categorias) {
-    const delCat = disponibles.filter((e) => e.category === cat);
-    // Si con el equipo elegido no alcanza, completa con peso corporal libre de esa categoría
-    pools[cat] = shuffle(
-      delCat.length >= cantidad
-        ? delCat
-        : ejercicios.filter((e) => e.category === cat && e.equipment === 'body weight' && !e.req)
-    );
+    // Todo lo que se puede hacer con el equipo elegido. Si una zona se queda
+    // corta, el reparto de abajo completa el día con las demás zonas.
+    pools[cat] = shuffle(disponibles.filter((e) => e.category === cat));
   }
 
   const rutinas = {};

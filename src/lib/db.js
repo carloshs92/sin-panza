@@ -5,6 +5,7 @@ const K = {
   routines: 'sp.routines',
   history: 'sp.history',
   sesion: 'sp.sesion', // entrenamiento en curso, para reanudar si se sale por error
+  version: 'sp.version', // versión del formato de los datos guardados
 };
 
 const read = (key, fallback) => {
@@ -18,6 +19,46 @@ const read = (key, fallback) => {
 
 const write = (key, value) => localStorage.setItem(key, JSON.stringify(value));
 
+// ---- Versión del formato y migraciones ----
+// Cada cambio de formato de los datos guardados sube VERSION_DATOS y añade su
+// migración en MIGRACIONES[n] (de n-1 a n). Se aplican en orden al cargar este
+// módulo, que importan todas las páginas. Una migración debe tolerar que no
+// haya datos (instalación nueva) y poder repetirse sin romper nada.
+export const VERSION_DATOS = 1;
+
+const MIGRACIONES = {
+  // 1: repetir el onboarding reescribía `creado` con la fecha de la edición, y
+  // el calendario la usa para no contar como fallados los días previos al plan.
+  // Se recupera como la más antigua entre `creado` y la primera sesión.
+  1: () => {
+    const perfil = read(K.profile, null);
+    if (!perfil) return;
+    const fechas = [perfil.creado, ...read(K.history, []).map((h) => h.fecha)]
+      .map((f) => new Date(f).getTime())
+      .filter((t) => !Number.isNaN(t));
+    if (fechas.length === 0) return;
+    write(K.profile, { ...perfil, creado: new Date(Math.min(...fechas)).toISOString() });
+  },
+};
+
+export function migrar() {
+  const desde = read(K.version, 0);
+  // Datos de una versión más nueva de la app (p. ej. importados): no se tocan
+  if (desde >= VERSION_DATOS) return;
+  for (let n = desde + 1; n <= VERSION_DATOS; n++) {
+    try {
+      MIGRACIONES[n]();
+    } catch (err) {
+      // Se deja la versión en la última buena para reintentar en la próxima carga
+      console.error(`[sinpanza] falló la migración ${n}`, err);
+      return;
+    }
+    write(K.version, n);
+  }
+}
+
+if (typeof localStorage !== 'undefined') migrar();
+
 export const DEFAULT_SETTINGS = {
   minPorEjercicio: 3,
   series: 4,
@@ -29,6 +70,7 @@ export const saveProfile = (p) => write(K.profile, p);
 
 export const getSettings = () => ({ ...DEFAULT_SETTINGS, ...read(K.settings, {}) });
 export const saveSettings = (s) => write(K.settings, s);
+export const hayAjustesGuardados = () => localStorage.getItem(K.settings) !== null;
 
 export const getRoutines = () => read(K.routines, {});
 export const saveRoutines = (r) => write(K.routines, r);
@@ -55,6 +97,24 @@ export const clearSesion = () => localStorage.removeItem(K.sesion);
 
 export const resetAll = () => Object.values(K).forEach((k) => localStorage.removeItem(k));
 
+// ---- Copia de seguridad ----
+// Lo que viaja en una copia. La sesión en curso no (es efímera) ni la versión
+// (va aparte, en la cabecera de la copia). Al añadir una clave nueva a K que
+// sea dato del usuario, añádela aquí.
+const EN_COPIA = ['profile', 'settings', 'routines', 'history'];
+
+export const exportarDatos = () =>
+  Object.fromEntries(EN_COPIA.map((k) => [k, read(K[k], null)]).filter(([, v]) => v !== null));
+
+// Reemplaza todo por el contenido de una copia (ya validada) y la sube de
+// versión con las migraciones si viene de una versión anterior de la app.
+export function importarDatos(datos, version) {
+  resetAll();
+  for (const k of EN_COPIA) if (datos[k] != null) write(K[k], datos[k]);
+  write(K.version, version);
+  migrar();
+}
+
 export const DIAS = [
   { id: 'lunes', label: 'Lunes', corto: 'L' },
   { id: 'martes', label: 'Martes', corto: 'M' },
@@ -66,27 +126,27 @@ export const DIAS = [
 ];
 
 export const CATEGORIAS = [
-  { id: 'waist', label: 'Abdomen', emoji: '🔥' },
-  { id: 'cardio', label: 'Cardio', emoji: '❤️' },
-  { id: 'chest', label: 'Pecho', emoji: '💪' },
-  { id: 'back', label: 'Espalda', emoji: '🦾' },
-  { id: 'shoulders', label: 'Hombros', emoji: '🏋️' },
-  { id: 'upper arms', label: 'Brazos', emoji: '💥' },
-  { id: 'upper legs', label: 'Piernas', emoji: '🦵' },
-  { id: 'lower legs', label: 'Pantorrillas', emoji: '🦶' },
+  { id: 'waist', label: 'Abdomen' },
+  { id: 'cardio', label: 'Cardio' },
+  { id: 'chest', label: 'Pecho' },
+  { id: 'back', label: 'Espalda' },
+  { id: 'shoulders', label: 'Hombros' },
+  { id: 'upper arms', label: 'Brazos' },
+  { id: 'upper legs', label: 'Piernas' },
+  { id: 'lower legs', label: 'Pantorrillas' },
 ];
 
 export const IDIOMAS = [
-  { id: 'es', label: 'Español', emoji: '🇪🇸' },
-  { id: 'en', label: 'English', emoji: '🇬🇧' },
-  { id: 'fr', label: 'Français', emoji: '🇫🇷' },
-  { id: 'it', label: 'Italiano', emoji: '🇮🇹' },
-  { id: 'pl', label: 'Polski', emoji: '🇵🇱' },
-  { id: 'tr', label: 'Türkçe', emoji: '🇹🇷' },
-  { id: 'ru', label: 'Русский', emoji: '🇷🇺' },
-  { id: 'zh', label: '中文', emoji: '🇨🇳' },
-  { id: 'hi', label: 'हिन्दी', emoji: '🇮🇳' },
-  { id: 'ko', label: '한국어', emoji: '🇰🇷' },
+  { id: 'es', label: 'Español' },
+  { id: 'en', label: 'English' },
+  { id: 'fr', label: 'Français' },
+  { id: 'it', label: 'Italiano' },
+  { id: 'pl', label: 'Polski' },
+  { id: 'tr', label: 'Türkçe' },
+  { id: 'ru', label: 'Русский' },
+  { id: 'zh', label: '中文' },
+  { id: 'hi', label: 'हिन्दी' },
+  { id: 'ko', label: '한국어' },
 ];
 
 // Dónde y con qué entrena: cada opción habilita equipamiento del dataset.
@@ -94,14 +154,14 @@ export const IDIOMAS = [
 // «req» habilita ejercicios de peso corporal que necesitan una estructura
 // (dominadas → barra fija, banco → banco/silla/apoyo elevado).
 export const EQUIPOS = [
-  { id: 'cuerpo', label: 'Solo mi cuerpo', emoji: '🧍', equip: ['body weight'] },
-  { id: 'dominadas', label: 'Barra de dominadas', emoji: '🚪', equip: [], req: 'barra' },
-  { id: 'banco', label: 'Banco o silla firme', emoji: '🪑', equip: [], req: 'banco' },
-  { id: 'mancuernas', label: 'Mancuernas', emoji: '🏋️', equip: ['dumbbell'] },
-  { id: 'bandas', label: 'Bandas elásticas', emoji: '🪢', equip: ['band', 'resistance band'] },
-  { id: 'kettlebell', label: 'Kettlebell', emoji: '🔔', equip: ['kettlebell'] },
-  { id: 'barra', label: 'Barra y discos', emoji: '🛠️', equip: ['barbell', 'ez barbell', 'olympic barbell', 'trap bar'] },
-  { id: 'gym', label: 'Gym con máquinas', emoji: '🏢', equip: '*' },
+  { id: 'cuerpo', label: 'Solo mi cuerpo', equip: ['body weight'] },
+  { id: 'dominadas', label: 'Barra de dominadas', equip: [], req: 'barra' },
+  { id: 'banco', label: 'Banco o silla firme', equip: [], req: 'banco' },
+  { id: 'mancuernas', label: 'Mancuernas', equip: ['dumbbell'] },
+  { id: 'bandas', label: 'Bandas elásticas', equip: ['band', 'resistance band'] },
+  { id: 'kettlebell', label: 'Kettlebell', equip: ['kettlebell'] },
+  { id: 'barra', label: 'Barra y discos', equip: ['barbell', 'ez barbell', 'olympic barbell', 'trap bar'] },
+  { id: 'gym', label: 'Gym con máquinas', equip: '*' },
 ];
 
 const ORDEN_JS = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
