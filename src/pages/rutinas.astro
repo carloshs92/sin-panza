@@ -72,7 +72,7 @@ import Base from '../layouts/Base.astro';
 
   .cal { margin-bottom: 22px; }
   .cal-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
-  .cal-head h2 { font-size: 1.05rem; text-transform: capitalize; }
+  .cal-head h2 { font-size: 1.05rem; }
   .cal-head span { font-size: 0.8rem; }
   .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
   .cal-labels { margin-bottom: 6px; }
@@ -119,9 +119,10 @@ import Base from '../layouts/Base.astro';
   .lista :global(.dia-editar:active) { color: var(--accent); background: var(--accent-soft); }
   .lista :global(.dia-card.hoy) { border-color: var(--accent); background: linear-gradient(140deg, var(--accent-soft), var(--card) 55%); }
 
-  .lista :global(.dia-top) { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .lista :global(.dia-top) { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 12px; }
   .lista :global(.dia-top h2) { font-size: 1.15rem; display: flex; align-items: center; gap: 10px; }
   .lista :global(.dia-meta) { display: flex; gap: 8px; }
+  .lista :global(.dia-meta .tag) { white-space: nowrap; }
 
   .lista :global(.thumbs) { display: flex; gap: 8px; overflow: hidden; }
   .lista :global(.thumbs img) {
@@ -139,6 +140,8 @@ import Base from '../layouts/Base.astro';
 <script>
   import { getProfile, getRoutines, getSettings, getHistory, calcularRacha, DIAS, diaHoy, diaDe } from '../lib/db.js';
   import { mediaUrl, precargar } from '../lib/media.js';
+  import { duracionEstimadaMin } from '../lib/plan.js';
+  import { escapar, mayusInicial } from '../lib/textos.js';
   import { navigate } from 'astro:transitions/client';
 
   document.addEventListener('astro:page-load', () => {
@@ -160,7 +163,8 @@ import Base from '../layouts/Base.astro';
     const hechos = new Set(historial.map((h) => new Date(h.fecha).toDateString()));
 
     // ---- saludo + stats ----
-    root.querySelector('#saludo').textContent = `Hola, ${perfil.nombre ?? 'crack'} 👋 · ${perfil.tiempoMin} min al día`;
+    const nombre = escapar(perfil.nombre ?? '');
+    root.querySelector('#saludo').textContent = `Hola, ${perfil.nombre || 'crack'} 👋`;
     const esteMes = historial.filter((h) => {
       const f = new Date(h.fecha);
       return f.getMonth() === ahora.getMonth() && f.getFullYear() === ahora.getFullYear();
@@ -177,13 +181,13 @@ import Base from '../layouts/Base.astro';
       hoyCard.className = 'hoy-card cumplido rise rise-1';
       hoyCard.href = '/rutinas';
       hoyCard.innerHTML = `<div class="hc-titulo">🏆 ¡Objetivo de hoy cumplido!</div>
-        <div class="hc-sub">Ya entrenaste hoy, ${perfil.nombre ?? ''}. Descansa o repite si te sobran ganas 💪</div>`;
+        <div class="hc-sub">Ya entrenaste hoy${nombre ? `, ${nombre}` : ''}. Descansa o repite si te sobran ganas 💪</div>`;
     } else if (programadoHoy) {
       const n = (rutinas[hoy] || []).length;
       hoyCard.className = 'hoy-card pendiente rise rise-1';
       hoyCard.href = `/entrenar?dia=${hoy}`;
       hoyCard.innerHTML = `<div class="hc-titulo">▶ Hoy toca entrenar</div>
-        <div class="hc-sub">${n} ejercicios · ~${n * settings.minPorEjercicio} min. ¡Dale, son solo ${perfil.tiempoMin} minutos!</div>`;
+        <div class="hc-sub">${n} ejercicios · ~${duracionEstimadaMin(n, settings)} min con descansos. ¡Dale!</div>`;
     } else {
       hoyCard.className = 'hoy-card rise rise-1';
       hoyCard.href = '/rutinas';
@@ -196,16 +200,18 @@ import Base from '../layouts/Base.astro';
     const m = ahora.getMonth();
     const diasEnMes = new Date(y, m + 1, 0).getDate();
     const offset = (new Date(y, m, 1).getDay() + 6) % 7; // lunes = 0
-    root.querySelector('#calTitulo').textContent = ahora.toLocaleDateString('es', { month: 'long', year: 'numeric' });
+    root.querySelector('#calTitulo').textContent = mayusInicial(ahora.toLocaleDateString('es', { month: 'long', year: 'numeric' }));
 
     const calBox = root.querySelector('#calDias');
     let cumplidosMes = 0;
     let programadosMes = 0;
+    // Los días anteriores a crear el plan no cuentan como fallados
+    const inicioPlan = perfil.creado ? new Date(new Date(perfil.creado).toDateString()) : null;
     let html = '<span class="cd vacio"></span>'.repeat(offset);
     for (let d = 1; d <= diasEnMes; d++) {
       const fecha = new Date(y, m, d);
       const esFuturo = fecha > ahora && fecha.toDateString() !== hoyStr;
-      const programado = perfil.dias.includes(diaDe(fecha));
+      const programado = perfil.dias.includes(diaDe(fecha)) && !(inicioPlan && fecha < inicioPlan);
       const hecho = hechos.has(fecha.toDateString());
       if (programado && !esFuturo) programadosMes++;
       if (hecho) cumplidosMes++;
@@ -236,7 +242,7 @@ import Base from '../layouts/Base.astro';
       const ejercicios = rutinas[diaId] || [];
       const esHoy = diaId === hoy;
       const hechoHoy = esHoy && cumplidoHoy;
-      const totalMin = ejercicios.length * settings.minPorEjercicio;
+      const totalMin = duracionEstimadaMin(ejercicios.length, settings);
 
       const card = document.createElement('div');
       card.className = `dia-card rise ${esHoy ? 'hoy' : ''}`;

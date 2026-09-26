@@ -84,6 +84,7 @@ import Base from '../layouts/Base.astro';
   import { getProfile, getRoutineDay, saveRoutineDay, CATEGORIAS, DIAS } from '../lib/db.js';
   import { cargarEjercicios, equipoPermitido, estructurasPermitidas } from '../lib/plan.js';
   import { mediaUrl, precargar } from '../lib/media.js';
+  import { musculo, equipamiento } from '../lib/textos.js';
   import { navigate } from 'astro:transitions/client';
 
   document.addEventListener('astro:page-load', async () => {
@@ -159,7 +160,7 @@ import Base from '../layouts/Base.astro';
       filtrados = todos.filter((e) => {
         if (soloMio && !puedeHacerlo(e)) return false;
         if (categoria && e.category !== categoria) return false;
-        if (texto && !e.name.toLowerCase().includes(texto) && !e.target.toLowerCase().includes(texto)) return false;
+        if (texto && ![e.name, e.target, musculo(e.target)].some((x) => x.toLowerCase().includes(texto))) return false;
         return true;
       });
       pintados = 0;
@@ -189,8 +190,8 @@ import Base from '../layouts/Base.astro';
           <div class="res-datos">
             <b>${e.name}</b>
             <div class="res-tags">
-              <span class="tag accent">${e.target}</span>
-              <span class="tag blue">${e.equipment}</span>
+              <span class="tag accent">${musculo(e.target)}</span>
+              <span class="tag blue">${equipamiento(e.equipment)}</span>
               ${e.req ? `<span class="tag green">${e.req === 'barra' ? 'barra' : 'banco'}</span>` : ''}
             </div>
             ${enRutina.has(e.id) ? '<div class="ya">✓ ya está en esta rutina</div>' : ''}

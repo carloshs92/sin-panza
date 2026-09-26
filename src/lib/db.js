@@ -29,6 +29,7 @@ export const saveProfile = (p) => write(K.profile, p);
 
 export const getSettings = () => ({ ...DEFAULT_SETTINGS, ...read(K.settings, {}) });
 export const saveSettings = (s) => write(K.settings, s);
+export const hayAjustesGuardados = () => localStorage.getItem(K.settings) !== null;
 
 export const getRoutines = () => read(K.routines, {});
 export const saveRoutines = (r) => write(K.routines, r);

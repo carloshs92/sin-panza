@@ -242,6 +242,8 @@ import Base from '../layouts/Base.astro';
   import { soportaVoz, crearEscucha, vozDe } from '../lib/voice.js';
   import { soportaTTS, leer, callar } from '../lib/tts.js';
   import { mediaUrl, precargar } from '../lib/media.js';
+  import { segundosPorSerie as calcSegundosPorSerie } from '../lib/plan.js';
+  import { musculo, equipamiento } from '../lib/textos.js';
   import { navigate } from 'astro:transitions/client';
 
   document.addEventListener('astro:page-load', () => {
@@ -285,7 +287,7 @@ import Base from '../layouts/Base.astro';
     let escucha = null;
     let wakeLock = null;
 
-    const segundosPorSerie = () => Math.max(10, Math.round((st.minPorEjercicio * 60) / st.series));
+    const segundosPorSerie = () => calcSegundosPorSerie(st.minPorEjercicio, st.series);
     const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
     // ---------- render ----------
@@ -298,8 +300,8 @@ import Base from '../layouts/Base.astro';
       $('exGif').src = mediaUrl(ex.gif);
       $('exNombre').textContent = ex.name;
       $('exTags').innerHTML = `
-        <span class="tag accent">${ex.target}</span>
-        <span class="tag blue">${ex.equipment}</span>`;
+        <span class="tag accent">${musculo(ex.target)}</span>
+        <span class="tag blue">${equipamiento(ex.equipment)}</span>`;
       $('exPasos').innerHTML = ex.steps.map((s) => `<li>${s}</li>`).join('');
       $('cfgMin').textContent = String(st.minPorEjercicio);
       $('cfgSer').textContent = String(st.series);

@@ -17,7 +17,7 @@ Estado: `[ ]` pendiente · `[~]` en curso · `[x]` hecho
 > hay bugs visibles en la pantalla principal. Construir encima multiplica la
 > deuda. Esto va primero.
 
-- [ ] **0.1 · Bugs activos** · S · _sin dependencias_
+- [x] **0.1 · Bugs activos** · S · _sin dependencias_
   - Duración estimada real: hoy es `ejercicios × minPorEjercicio` e ignora
     descansos y cuenta atrás; la tarjeta de hoy dice «~5 min» y «son solo 15
     minutos» en la misma línea. Un único `duracionEstimadaMin()` para rutinas y
@@ -30,6 +30,10 @@ Estado: `[ ]` pendiente · `[~]` en curso · `[x]` hecho
   - La edad se pedía «para ajustar la intensidad» y no se usaba: ahora fija el
     descanso y las series iniciales la primera vez que se crea el plan.
   - El nombre del usuario ya no se inyecta con `innerHTML`.
+  - El calendario marcaba como fallados los días anteriores a crear el plan
+    (y repetir el onboarding reiniciaba esa fecha).
+  - El número de ejercicios por día se calcula con el tiempo real (con
+    descansos), no solo con los minutos de trabajo.
   - ✅ *Listo cuando*: la tarjeta de hoy y el editor muestran la misma duración,
     coherente con los ajustes, y ninguna rutina generada contiene estiramientos.
 
@@ -246,4 +250,4 @@ subir una serie no necesita un modelo de lenguaje, necesita recordar cómo te fu
 3. Un commit por ítem, marcando aquí la casilla en el mismo commit.
 4. Si algo se descubre por el camino, se añade al roadmap en vez de improvisar.
 
-**Siguiente**: 0.1 — bugs activos.
+**Siguiente**: 0.2 — esquema versionado y migraciones.

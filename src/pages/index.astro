@@ -127,8 +127,8 @@ import Base from '../layouts/Base.astro';
 </style>
 
 <script>
-  import { getProfile, saveProfile, saveRoutines, getSettings, CATEGORIAS, DIAS, IDIOMAS, EQUIPOS } from '../lib/db.js';
-  import { cargarEjercicios, generarRutinas } from '../lib/plan.js';
+  import { getProfile, saveProfile, saveRoutines, getSettings, saveSettings, hayAjustesGuardados, CATEGORIAS, DIAS, IDIOMAS, EQUIPOS } from '../lib/db.js';
+  import { cargarEjercicios, generarRutinas, ajustesPorEdad } from '../lib/plan.js';
   import { navigate } from 'astro:transitions/client';
 
   document.addEventListener('astro:page-load', () => {
@@ -263,8 +263,11 @@ import Base from '../layouts/Base.astro';
         equipo: [...estado.equipo],
         tiempoMin: estado.tiempoMin,
         dias: DIAS.map((d) => d.id).filter((id) => estado.dias.has(id)),
-        creado: new Date().toISOString(),
+        creado: previo?.creado ?? new Date().toISOString(), // conservarlo al editar el plan
       };
+      // La primera vez, la edad fija la intensidad de partida; si ya tocaste
+      // los ajustes (repitiendo el onboarding), se respetan.
+      if (!hayAjustesGuardados()) saveSettings(ajustesPorEdad(perfil.edad, getSettings()));
       const ejercicios = await cargarEjercicios(perfil.idioma);
       const rutinas = generarRutinas(perfil, ejercicios, getSettings());
       saveProfile(perfil);
